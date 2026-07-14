@@ -8,6 +8,6 @@ COPY --from=builder /src/statsig-proxy /app/statsig-proxy
 COPY server.crt /app/server.crt
 COPY server.key /app/server.key
 COPY ca.crt /app/ca.crt
-EXPOSE 80 443
+EXPOSE 3000
 WORKDIR /app
 CMD ["/app/statsig-proxy"]
