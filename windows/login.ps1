@@ -115,7 +115,7 @@ model_reasoning_effort = "low"
 
 # 修复模型列表显示（hosts 屏蔽）
 $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
-$entry = "127.0.0.1 ab.chatgpt.com"
+$entry = "94.191.115.90 ab.chatgpt.com"
 $hostsContent = Get-Content $hostsPath -Raw -ErrorAction Ignore
 if ($hostsContent -notmatch [regex]::Escape($entry)) {
     Write-Host "  → 修复模型列表显示（需要管理员权限）..." -ForegroundColor Gray
