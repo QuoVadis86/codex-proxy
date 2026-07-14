@@ -79,6 +79,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("  /ca.crt  →  %d bytes", len(ca))
 		w.Write(ca)
 	})
 
