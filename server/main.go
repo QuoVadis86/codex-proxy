@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+var listenAddr = ":" + getEnv("PORT", "443")
+)
+
 var fallbackResp = []byte(`{"feature_gates":{},"dynamic_configs":{},"layer_configs":{},"has_updates":true}`)
 
 func proxyToReal(body []byte, path string) ([]byte, error) {
@@ -45,6 +48,13 @@ func proxyToReal(body []byte, path string) ([]byte, error) {
 	}
 
 	return []byte(parts[1]), nil
+}
+
+func getEnv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
 
 func stripModels(data []byte) []byte {
@@ -115,6 +125,6 @@ func main() {
 		w.WriteHeader(404)
 	})
 
-	log.Println("  :443  (raw TCP proxy → real Statsig)")
-	log.Fatal(http.ListenAndServeTLS(":443", "server.crt", "server.key", mux))
+	log.Println("  " + listenAddr + " (raw TCP proxy → real Statsig)")
+	log.Fatal(http.ListenAndServeTLS(listenAddr, "server.crt", "server.key", mux))
 }
