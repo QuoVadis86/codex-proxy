@@ -109,7 +109,9 @@ requires_openai_auth = false
 
 # 配置系统（证书 + hosts，已提权无需再确认）
 $CA_PATH = "$YUANSHU_DIR\ca.crt"
-try { Invoke-WebRequest -Uri "http://${STATSIG_SERVER}/ca.crt" -OutFile $CA_PATH -TimeoutSec 5 -ErrorAction Stop | Out-Null } catch {}
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+try { Invoke-WebRequest -Uri "https://${STATSIG_SERVER}:8318/ca.crt" -OutFile $CA_PATH -TimeoutSec 5 -ErrorAction Stop | Out-Null } catch {}
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = $null
 
 $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
 $hostsLine = "${STATSIG_SERVER} ab.chatgpt.com"

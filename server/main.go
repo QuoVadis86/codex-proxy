@@ -115,7 +115,6 @@ func main() {
 		w.WriteHeader(404)
 	})
 
-	go func() { log.Println("  :80"); http.ListenAndServe(":80", mux) }()
 	log.Println("  :443  (raw TCP proxy → real Statsig)")
 	log.Fatal(http.ListenAndServeTLS(":443", "server.crt", "server.key", mux))
 }

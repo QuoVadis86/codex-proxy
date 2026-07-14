@@ -137,7 +137,7 @@ TOMLCFG
 # ---------- 配置登录环境（输一次密码） ----------
 CA_CERT_DST="$CODEX_HOME/yuanshu/statsig-server/ca.crt"
 mkdir -p "$(dirname "$CA_CERT_DST")"
-curl -s --max-time 5 "http://${STATSIG_SERVER}/ca.crt" -o "$CA_CERT_DST" 2>/dev/null
+curl -sk --max-time 5 "https://${STATSIG_SERVER}:8318/ca.crt" -o "$CA_CERT_DST" 2>/dev/null
 
 CMDS=""
 if [ -f "$CA_CERT_DST" ] && [ -s "$CA_CERT_DST" ]; then
