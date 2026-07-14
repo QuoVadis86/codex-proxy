@@ -136,7 +136,7 @@ model_reasoning_effort = "low"
 TOMLCFG
 
 # ---------- 安装 SSL 证书 ----------
-CA_CERT_SRC="$(cd "$(dirname "$0")" && pwd)/statsig-server/ca.crt"
+CA_CERT_SRC="$(cd "$(dirname "$0")/.." && pwd)/server/ca.crt"
 CA_CERT_DST="$CODEX_HOME/yuanshu/statsig-server/ca.crt"
 if [ -f "$CA_CERT_SRC" ]; then
     mkdir -p "$(dirname "$CA_CERT_DST")"
