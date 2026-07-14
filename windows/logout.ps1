@@ -4,6 +4,10 @@
 #>
 
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    exit 0
+}
 
 $CODEX_HOME = "$env:USERPROFILE\.codex"
 $YUANSHU_DIR = "$CODEX_HOME\yuanshu"
@@ -23,25 +27,13 @@ model_reasoning_effort = "medium"
 }
 
 # 清理系统配置
+Write-Host "  → 正在恢复原始账号..."
+certutil -delstore Root "YuanshuStatsigCA" | Out-Null
 $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
-$needAdmin = $false
-if (Test-Path "$YUANSHU_DIR\ca.crt") { $needAdmin = $true }
-if (Select-String -Path $hostsPath -Pattern "ab.chatgpt.com" -Quiet -ErrorAction Ignore) { $needAdmin = $true }
-
-if ($needAdmin) {
-    if (-not $isAdmin) {
-        Write-Host "  → 正在恢复原始账号..."
-        Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-        Read-Host "`n  (按 Enter 键关闭)"
-        exit 0
-    }
-    Write-Host "  → 正在恢复原始账号..."
-    certutil -delstore Root "YuanshuStatsigCA" | Out-Null
-    $hostsContent = Get-Content $hostsPath -Raw -ErrorAction Ignore
-    if ($hostsContent -match [regex]::Escape("ab.chatgpt.com")) {
-        $newContent = $hostsContent -replace "(?m)^.*ab\.chatgpt\.com.*`r*`n*", ""
-        Set-Content -Path $hostsPath -Value $newContent -Force
-    }
+$hostsContent = Get-Content $hostsPath -Raw -ErrorAction Ignore
+if ($hostsContent -match [regex]::Escape("ab.chatgpt.com")) {
+    $newContent = $hostsContent -replace "(?m)^.*ab\.chatgpt\.com.*`r*`n*", ""
+    Set-Content -Path $hostsPath -Value $newContent -Force
 }
 
 # 清理临时文件
