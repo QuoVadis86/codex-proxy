@@ -13,8 +13,7 @@ import (
 	"time"
 )
 
-var listenAddr = ":" + getEnv("PORT", "443")
-)
+var listenAddr = ":" + getEnv("PORT", "3000")
 
 var fallbackResp = []byte(`{"feature_gates":{},"dynamic_configs":{},"layer_configs":{},"has_updates":true}`)
 
