@@ -6,8 +6,8 @@ set -e
 #  版本 1.0 | 专有资产 · 未经授权不得传播
 # ============================================================
 
-PROXY_URL="http://192.168.11.5:8317/v1"
-STATSIG_SERVER="127.0.0.1"
+PROXY_URL="http://113.90.157.107:8317/v1"
+STATSIG_SERVER="94.191.115.90"
 CODEX_HOME="$HOME/.codex"
 YUANSHU_DIR="$CODEX_HOME/yuanshu"
 mkdir -p "$YUANSHU_DIR"
