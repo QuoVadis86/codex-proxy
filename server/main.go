@@ -98,7 +98,16 @@ func main() {
 	})
 
 	mux.HandleFunc("/v1/", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+		body, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		realData, err := proxyToReal(body, r.URL.RequestURI())
+		if err != nil {
+			log.Printf("  /v1/* proxy fail: %v", err)
+			w.WriteHeader(502)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(realData)
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
