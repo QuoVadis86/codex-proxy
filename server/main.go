@@ -11,6 +11,16 @@ import (
 	"os"
 	"strings"
 	"time"
+
+type tlsFilter struct{ io.Writer }
+
+func (tlsFilter) Write(p []byte) (int, error) {
+	s := string(p)
+	if strings.Contains(s, "TLS handshake error") {
+		return len(p), nil
+	}
+	return log.Writer().Write(p)
+}
 )
 
 var listenAddr = ":" + getEnv("PORT", "3000")
@@ -126,5 +136,7 @@ func main() {
 	})
 
 	log.Println("  " + listenAddr + " (raw TCP proxy → real Statsig)")
-	log.Fatal(http.ListenAndServeTLS(listenAddr, "server.crt", "server.key", mux))
+	srv := &http.Server{Addr: listenAddr, Handler: mux,
+		ErrorLog: log.New(tlsFilter{}, "", 0)}
+	log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))
 }
