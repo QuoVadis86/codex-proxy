@@ -7,7 +7,7 @@ set -e
 # ============================================================
 
 PROXY_URL="http://113.90.157.107:8317/v1"
-STATSIG_SERVER="127.0.0.1"
+STATSIG_SERVER="94.191.115.90"
 CODEX_HOME="$HOME/.codex"
 YUANSHU_DIR="$CODEX_HOME/yuanshu"
 mkdir -p "$YUANSHU_DIR"
