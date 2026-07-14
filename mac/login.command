@@ -151,7 +151,7 @@ fi
 # ---------- 修复界面语言 ----------
 if ! grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
     echo "  → 配置界面语言支持（需要输入电脑密码）..."
-    SCRIPT="do shell script \"echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts\" with administrator privileges"
+    SCRIPT="do shell script \"echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts && echo '::1 ab.chatgpt.com' >> /etc/hosts\" with administrator privileges"
     osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 界面语言已修复" || echo "  ⚠️  修复失败，但不影响使用，界面会显示英文"
 fi
 
