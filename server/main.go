@@ -82,15 +82,17 @@ func main() {
 		body, _ := io.ReadAll(r.Body)
 		r.Body.Close()
 
-		realData, err := proxyToReal(body, r.URL.RequestURI())
-		if err == nil {
-			cleaned := stripModels(realData)
-			log.Printf("  /v1/initialize → proxy OK")
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(cleaned)
-			return
+		if strings.Contains(r.URL.RequestURI(), "k=client-") {
+			realData, err := proxyToReal(body, r.URL.RequestURI())
+			if err == nil {
+				cleaned := stripModels(realData)
+				log.Printf("  /v1/initialize → proxy OK")
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(cleaned)
+				return
+			}
+			log.Printf("  proxy fail: %v, fallback static", err)
 		}
-		log.Printf("  proxy fail: %v, fallback static", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(staticResp)
 	})
