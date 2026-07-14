@@ -6,4 +6,6 @@ services:
     container_name: statsig-proxy
     restart: unless-stopped
     ports:
-      - "8318:443"
+      - "8318:3000"
+    environment:
+      - PORT=3000
