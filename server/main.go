@@ -7,17 +7,13 @@ import (
 	"os"
 )
 
-var responseData []byte
-
 func main() {
-	var err error
-	responseData, err = os.ReadFile("statsig_response.json")
+	respData, err := os.ReadFile("statsig_response.json")
 	if err != nil {
-		log.Fatalf("failed to read statsig_response.json: %v", err)
+		log.Fatalf("read response.json: %v", err)
 	}
 
 	ca, _ := os.ReadFile("ca.crt")
-
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +26,7 @@ func main() {
 
 	mux.HandleFunc("/v1/initialize", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Write(responseData)
+		w.Write(respData)
 	})
 
 	mux.HandleFunc("/v1/", func(w http.ResponseWriter, r *http.Request) {
@@ -41,11 +37,8 @@ func main() {
 		w.WriteHeader(404)
 	})
 
-	go func() {
-		log.Println("  :80  (/ca.crt)")
-		http.ListenAndServe(":80", mux)
-	}()
+	go func() { log.Println("  :80  (/ca.crt)"); http.ListenAndServe(":80", mux) }()
 
-	log.Println("  :443  (static Statsig response)")
+	log.Println("  :443  (Statsig proxy - static response)")
 	log.Fatal(http.ListenAndServeTLS(":443", "server.crt", "server.key", mux))
 }
