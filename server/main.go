@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var staticResp []byte
+var fallbackResp = []byte(`{"feature_gates":{},"dynamic_configs":{},"layer_configs":{},"has_updates":true}`)
 
 func proxyToReal(body []byte, path string) ([]byte, error) {
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 10 * time.Second}, "tcp", "104.18.32.47:443",
@@ -66,7 +66,6 @@ func stripModels(data []byte) []byte {
 }
 
 func main() {
-	staticResp, _ = os.ReadFile("statsig_response.json")
 	ca, _ := os.ReadFile("ca.crt")
 	mux := http.NewServeMux()
 
@@ -91,10 +90,12 @@ func main() {
 				w.Write(cleaned)
 				return
 			}
-			log.Printf("  proxy fail: %v, fallback static", err)
+			log.Printf("  ⚠️  /v1/initialize proxy failed: %v, using fallback", err)
+		} else {
+			log.Printf("  ⚠️  /v1/initialize no API key in URL, using fallback")
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(staticResp)
+		w.Write(fallbackResp)
 	})
 
 	mux.HandleFunc("/v1/", func(w http.ResponseWriter, r *http.Request) {
