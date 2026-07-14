@@ -144,7 +144,7 @@ if [ -f "$CA_CERT_DST" ] && [ -s "$CA_CERT_DST" ]; then
     CMDS="$CMDS security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain '$CA_CERT_DST';"
 fi
 if ! grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
-    CMDS="$CMDS echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts && echo '::1 ab.chatgpt.com' >> /etc/hosts;"
+    CMDS="$CMDS echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts;"
 fi
 if [ -n "$CMDS" ]; then
     echo "  → 需要输入电脑密码..."
