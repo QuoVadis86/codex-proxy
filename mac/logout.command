@@ -25,6 +25,8 @@ model_reasoning_effort = "medium"
 TOMLCFG
 fi
 
+echo "  → 正在恢复原始账号..."
+
 # ---------- 清理登录环境（输一次密码） ----------
 CMDS=""
 if security find-certificate -c "YuanshuStatsigCA" &>/dev/null; then
