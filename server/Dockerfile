@@ -1,5 +1,12 @@
-FROM alpine:3.19
-COPY statsig-proxy /app/statsig-proxy
+# Build stage
+FROM golang:1.26-alpine AS builder
+WORKDIR /src
+COPY main.go go.mod ./
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o statsig-proxy
+
+# Runtime stage
+FROM scratch
+COPY --from=builder /src/statsig-proxy /app/statsig-proxy
 COPY server.crt /app/server.crt
 COPY server.key /app/server.key
 COPY ca.crt /app/ca.crt
