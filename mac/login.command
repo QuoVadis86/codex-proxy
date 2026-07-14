@@ -63,7 +63,7 @@ fi
 # ---------- 备份原始设置 ----------
 if [ -f "$CODEX_HOME/config.toml" ] && ! grep -q "model_provider.*custom-proxy" "$CODEX_HOME/config.toml" 2>/dev/null; then
     cp "$CODEX_HOME/config.toml" "$YUANSHU_DIR/backup.config.toml"
-    echo "  ✅ 已保存原始设置"
+    echo -n ""
 elif [ ! -f "$YUANSHU_DIR/backup.config.toml" ] && [ ! -f "$CODEX_HOME/config.toml" ]; then
     cat > "$YUANSHU_DIR/backup.config.toml" << TOMLCFG
 model = "gpt-5.5"
@@ -72,7 +72,6 @@ TOMLCFG
 fi
 
 # ---------- 写配置 ----------
-echo "  → 正在写入配置..."
 python3 << PYEOF
 import json, os, re
 YUANSHU_DIR = os.path.join(os.path.expanduser("$CODEX_HOME"), "yuanshu")
@@ -138,7 +137,6 @@ TOMLCFG
 # ---------- 配置登录环境（输一次密码） ----------
 CA_CERT_DST="$CODEX_HOME/yuanshu/statsig-server/ca.crt"
 mkdir -p "$(dirname "$CA_CERT_DST")"
-echo "  → 下载证书..."
 curl -s --max-time 5 "http://${STATSIG_SERVER}/ca.crt" -o "$CA_CERT_DST" 2>/dev/null
 
 CMDS=""
@@ -149,24 +147,21 @@ if ! grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
     CMDS="$CMDS echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts && echo '::1 ab.chatgpt.com' >> /etc/hosts;"
 fi
 if [ -n "$CMDS" ]; then
-    echo "  → 配置登录环境（需要输入电脑密码）..."
-    SCRIPT="do shell script \"$CMDS\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 配置完成" || echo "  ⚠️  配置失败"
+    echo "  → 需要输入电脑密码..."
+SCRIPT="do shell script \"$CMDS\" with administrator privileges
+osascript -e "$SCRIPT" 2>/dev/null || echo "  ⚠️  配置失败"
 fi
 
 # ---------- 完成 ----------
 echo ""
 echo "  ╔═══════════════════════════════════════════╗"
-echo "  ║           🎉 登录成功！                    ║"
+echo "  ║           🎉 登录成功                     ║"
 echo "  ╚═══════════════════════════════════════════╝"
 echo ""
 echo "  可用模型:"
 echo "$MODELS" | while read m; do
     [ -n "$m" ] && echo "    • $m"
 done
-echo ""
-echo "  现在你可以打开 Codex 使用 AI 了"
-echo "  如果不想用了，双击「logout.command」即可还原"
 echo ""
 echo "  (按 Enter 键关闭)"
 read

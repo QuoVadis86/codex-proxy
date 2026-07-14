@@ -17,16 +17,12 @@ echo ""
 
 # 恢复原始设置
 if [ -f "$YUANSHU_DIR/backup.config.toml" ]; then
-    echo "  → 正在恢复原始设置..."
     cp "$YUANSHU_DIR/backup.config.toml" "$CODEX_HOME/config.toml"
-    echo "  ✅ 原始设置已恢复"
 else
-    echo "  → 未找到备份，恢复默认设置..."
     cat > "$CODEX_HOME/config.toml" << TOMLCFG
 model = "gpt-5.5"
 model_reasoning_effort = "medium"
 TOMLCFG
-    echo "  ✅ 已重置为默认设置"
 fi
 
 # ---------- 清理登录环境（输一次密码） ----------
@@ -38,9 +34,9 @@ if grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
     CMDS="$CMDS sed -i '' '/ab.chatgpt.com/d' /etc/hosts;"
 fi
 if [ -n "$CMDS" ]; then
-    echo "  → 清理登录环境（需要输入电脑密码）..."
-    SCRIPT="do shell script \"$CMDS\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 已清理" || echo "  ⚠️  清理失败"
+echo "  → 需要输入电脑密码..."
+SCRIPT="do shell script \"$CMDS\" with administrator privileges"
+osascript -e "$SCRIPT" 2>/dev/null || echo "  ⚠️  清理失败"
 fi
 
 # 清理临时文件
@@ -50,11 +46,8 @@ rm -f "$YUANSHU_DIR/custom-proxy-fast.config.toml"
 
 echo ""
 echo "  ╔═══════════════════════════════════════════╗"
-echo "  ║        🎉 已退出，可以放心使用            ║"
+echo "  ║           🎉 已退出                       ║"
 echo "  ╚═══════════════════════════════════════════╝"
-echo ""
-echo "  所有设置已恢复原样"
-echo "  如果想再次使用，双击「login.command」即可"
 echo ""
 echo "  (按 Enter 键关闭)"
 read
