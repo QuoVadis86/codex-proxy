@@ -29,18 +29,18 @@ TOMLCFG
     echo "  ✅ 已重置为默认设置"
 fi
 
-# ---------- 删除 SSL 证书 ----------
+# ---------- 清理登录环境（输一次密码） ----------
+CMDS=""
 if security find-certificate -c "YuanshuStatsigCA" &>/dev/null; then
-    echo "  → 删除 SSL 证书（需要输入电脑密码）..."
-    SCRIPT="do shell script \"security delete-certificate -c 'YuanshuStatsigCA'\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null
+    CMDS="$CMDS security delete-certificate -c 'YuanshuStatsigCA';"
 fi
-
-# 还原 hosts
 if grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
-    echo "  → 恢复 hosts（需要输入电脑密码）..."
-    SCRIPT="do shell script \"sed -i '' '/ab.chatgpt.com/d' /etc/hosts\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 已恢复" || echo "  ⚠️  恢复失败，但不影响使用"
+    CMDS="$CMDS sed -i '' '/ab.chatgpt.com/d' /etc/hosts;"
+fi
+if [ -n "$CMDS" ]; then
+    echo "  → 清理登录环境（需要输入电脑密码）..."
+    SCRIPT="do shell script \"$CMDS\" with administrator privileges"
+    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 已清理" || echo "  ⚠️  清理失败"
 fi
 
 # 清理临时文件

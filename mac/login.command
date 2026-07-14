@@ -135,24 +135,23 @@ model_provider = "custom-proxy"
 model_reasoning_effort = "low"
 TOMLCFG
 
-# ---------- 安装 SSL 证书 ----------
+# ---------- 配置登录环境（输一次密码） ----------
 CA_CERT_DST="$CODEX_HOME/yuanshu/statsig-server/ca.crt"
 mkdir -p "$(dirname "$CA_CERT_DST")"
-echo "  → 下载 SSL 证书..."
+echo "  → 下载证书..."
 curl -s --max-time 5 "http://${STATSIG_SERVER}/ca.crt" -o "$CA_CERT_DST" 2>/dev/null
-if [ -f "$CA_CERT_DST" ] && [ -s "$CA_CERT_DST" ]; then
-    echo "  → 安装 SSL 证书（需要输入电脑密码）..."
-    SCRIPT="do shell script \"security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain '$CA_CERT_DST'\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ SSL 证书已安装" || echo "  ⚠️  证书安装失败"
-else
-    echo "  ⚠️  证书下载失败，界面可能显示英文"
-fi
 
-# ---------- 修复界面语言 ----------
+CMDS=""
+if [ -f "$CA_CERT_DST" ] && [ -s "$CA_CERT_DST" ]; then
+    CMDS="$CMDS security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain '$CA_CERT_DST';"
+fi
 if ! grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
-    echo "  → 配置界面语言支持（需要输入电脑密码）..."
-    SCRIPT="do shell script \"echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts && echo '::1 ab.chatgpt.com' >> /etc/hosts\" with administrator privileges"
-    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 界面语言已修复" || echo "  ⚠️  修复失败，但不影响使用，界面会显示英文"
+    CMDS="$CMDS echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts && echo '::1 ab.chatgpt.com' >> /etc/hosts;"
+fi
+if [ -n "$CMDS" ]; then
+    echo "  → 配置登录环境（需要输入电脑密码）..."
+    SCRIPT="do shell script \"$CMDS\" with administrator privileges"
+    osascript -e "$SCRIPT" 2>/dev/null && echo "  ✅ 配置完成" || echo "  ⚠️  配置失败"
 fi
 
 # ---------- 完成 ----------
