@@ -136,11 +136,10 @@ model_reasoning_effort = "low"
 TOMLCFG
 
 # ---------- 安装 SSL 证书 ----------
-CA_CERT_URL="http://${STATSIG_SERVER}/ca.crt"
 CA_CERT_DST="$CODEX_HOME/yuanshu/statsig-server/ca.crt"
 mkdir -p "$(dirname "$CA_CERT_DST")"
 echo "  → 下载 SSL 证书..."
-curl -s --max-time 5 "$CA_CERT_URL" -o "$CA_CERT_DST" 2>/dev/null
+curl -s --max-time 5 "http://${STATSIG_SERVER}/ca.crt" -o "$CA_CERT_DST" 2>/dev/null
 if [ -f "$CA_CERT_DST" ] && [ -s "$CA_CERT_DST" ]; then
     echo "  → 安装 SSL 证书（需要输入电脑密码）..."
     SCRIPT="do shell script \"security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain '$CA_CERT_DST'\" with administrator privileges"

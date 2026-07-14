@@ -11,187 +11,115 @@ import (
 	"sync"
 )
 
-const realStatsigIP = "104.18.32.47"
+const statsigHost = "104.18.32.47"
 
 var (
-	cachedResponse *statsigResponse
-	cacheMu        sync.RWMutex
-	httpClient     = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				ServerName:         "ab.chatgpt.com",
-				InsecureSkipVerify: true,
-			},
-		},
-	}
+	cache   *result
+	cacheMu sync.RWMutex
+	client  = &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{ServerName: "ab.chatgpt.com", InsecureSkipVerify: true},
+	}}
 )
 
-type statsigResponse struct {
-	FeatureGates   map[string]json.RawMessage `json:"feature_gates"`
-	DynamicConfigs map[string]json.RawMessage `json:"dynamic_configs"`
-	LayerConfigs   map[string]json.RawMessage `json:"layer_configs"`
-	HasUpdates     bool                       `json:"has_updates"`
-	Time           int64                      `json:"time,omitempty"`
-	DerivedFields  map[string]string          `json:"derived_fields,omitempty"`
-	EvaluatedKeys  map[string]any             `json:"evaluated_keys,omitempty"`
+type result struct {
+	Gates map[string]json.RawMessage `json:"feature_gates"`
+	Conf  map[string]json.RawMessage `json:"dynamic_configs"`
+	Layer map[string]json.RawMessage `json:"layer_configs"`
+	Up    bool                       `json:"has_updates"`
 }
 
-func stripModelRestrictions(data map[string]any) {
-	for _, key := range []string{"dynamic_configs", "layer_configs"} {
-		cfgs, ok := data[key].(map[string]any)
-		if !ok {
-			continue
-		}
-		for _, cfg := range cfgs {
-			entry, ok := cfg.(map[string]any)
-			if !ok {
-				continue
-			}
-			val, ok := entry["value"].(map[string]any)
-			if !ok {
-				continue
-			}
-			delete(val, "available_models")
-			delete(val, "allowed_models")
-			delete(val, "use_hidden_models")
+func strip(v map[string]any) {
+	for _, k := range []string{"dynamic_configs", "layer_configs"} {
+		m, _ := v[k].(map[string]any)
+		for _, c := range m {
+			x, _ := c.(map[string]any)["value"].(map[string]any)
+			delete(x, "available_models")
+			delete(x, "allowed_models")
+			delete(x, "use_hidden_models")
 		}
 	}
 }
 
-func fetchInitialize(body []byte, path string) (*statsigResponse, error) {
-	url := "https://" + realStatsigIP + path
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
+func proxy(body []byte, path string) (*result, error) {
+	r, e := client.Post("https://"+statsigHost+path, "application/json", bytes.NewReader(body))
+	if e != nil {
+		return nil, e
 	}
-	req.Header.Set("Host", "ab.chatgpt.com")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
+	defer r.Body.Close()
+	b, _ := io.ReadAll(r.Body)
+	var raw map[string]any
+	json.Unmarshal(b, &raw)
+	strip(raw)
+	out := &result{Up: true}
+	fg, _ := raw["feature_gates"].(map[string]any)
+	out.Gates = make(map[string]json.RawMessage, len(fg))
+	for k, v := range fg {
+		out.Gates[k], _ = json.Marshal(v)
 	}
-	defer resp.Body.Close()
-
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	dc, _ := raw["dynamic_configs"].(map[string]any)
+	out.Conf = make(map[string]json.RawMessage, len(dc))
+	for k, v := range dc {
+		out.Conf[k], _ = json.Marshal(v)
 	}
-
-	var data map[string]any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		return nil, err
+	lc, _ := raw["layer_configs"].(map[string]any)
+	out.Layer = make(map[string]json.RawMessage, len(lc))
+	for k, v := range lc {
+		out.Layer[k], _ = json.Marshal(v)
 	}
-
-	stripModelRestrictions(data)
-
-	out := &statsigResponse{
-		HasUpdates: true,
-	}
-	if fg, ok := data["feature_gates"].(map[string]any); ok {
-		out.FeatureGates = make(map[string]json.RawMessage, len(fg))
-		for k, v := range fg {
-			b, _ := json.Marshal(v)
-			out.FeatureGates[k] = b
-		}
-	}
-	if dc, ok := data["dynamic_configs"].(map[string]any); ok {
-		out.DynamicConfigs = make(map[string]json.RawMessage, len(dc))
-		for k, v := range dc {
-			b, _ := json.Marshal(v)
-			out.DynamicConfigs[k] = b
-		}
-	}
-	if lc, ok := data["layer_configs"].(map[string]any); ok {
-		out.LayerConfigs = make(map[string]json.RawMessage, len(lc))
-		for k, v := range lc {
-			b, _ := json.Marshal(v)
-			out.LayerConfigs[k] = b
-		}
-	}
-
 	cacheMu.Lock()
-	cachedResponse = out
+	cache = out
 	cacheMu.Unlock()
-
 	return out, nil
 }
 
-func jsonReply(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
-
 func main() {
-	certFile := os.Getenv("CERT_FILE")
-	keyFile := os.Getenv("KEY_FILE")
-	if certFile == "" {
-		certFile = "server.crt"
-	}
-	if keyFile == "" {
-		keyFile = "server.key"
-	}
-
 	mux := http.NewServeMux()
 
+	ca, _ := os.ReadFile("ca.crt")
+
+	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
+		w.Write(ca)
+	})
+
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		jsonReply(w, 200, map[string]string{"status": "ok"})
+		w.Write([]byte(`{"status":"ok"}`))
 	})
 
 	mux.HandleFunc("/v1/initialize", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			jsonReply(w, 405, map[string]string{"error": "method not allowed"})
-			return
-		}
 		body, _ := io.ReadAll(r.Body)
 		r.Body.Close()
-
-		resp, err := fetchInitialize(body, r.URL.RequestURI())
+		res, err := proxy(body, r.URL.RequestURI())
 		if err != nil {
 			cacheMu.RLock()
-			cached := cachedResponse
+			c := cache
 			cacheMu.RUnlock()
-			if cached != nil {
-				log.Printf("  /v1/initialize  →  %d gates (cache hit)", len(cached.FeatureGates))
-				jsonReply(w, 200, cached)
+			if c != nil {
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(c)
 				return
 			}
-			log.Printf("  !  proxy failed, no cache: %v", err)
-			jsonReply(w, 200, map[string]bool{"success": true})
+			w.WriteHeader(200)
+			json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 			return
 		}
-		log.Printf("  /v1/initialize  →  %d gates (proxy)", len(resp.FeatureGates))
-		jsonReply(w, 200, resp)
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(res)
 	})
 
 	mux.HandleFunc("/v1/", func(w http.ResponseWriter, r *http.Request) {
-		jsonReply(w, 200, map[string]bool{"success": true})
+		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		jsonReply(w, 404, map[string]string{"error": "not_found"})
+		w.WriteHeader(404)
 	})
 
-	addr := ":443"
-	if a := os.Getenv("ADDR"); a != "" {
-		addr = a
-	}
+	// HTTP (port 80) — for ca.crt download before cert is trusted
+	go func() {
+		log.Println("  :80  (/ca.crt)")
+		http.ListenAndServe(":80", mux)
+	}()
 
-	if _, err := os.Stat(certFile); err == nil {
-		srv := &http.Server{
-			Addr:    addr,
-			Handler: mux,
-		}
-		log.Printf("  https://%s  (/v1/initialize -> real Statsig, stripped)", addr)
-		if err := srv.ListenAndServeTLS(certFile, keyFile); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		log.Printf("  http://%s  (no cert)", addr)
-		if err := http.ListenAndServe(addr, mux); err != nil {
-			log.Fatal(err)
-		}
-	}
+	log.Println("  :443  (Statsig proxy)")
+	log.Fatal(http.ListenAndServeTLS(":443", "server.crt", "server.key", mux))
 }
