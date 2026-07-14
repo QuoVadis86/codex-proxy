@@ -35,7 +35,7 @@ func proxyToReal(body []byte, path string) ([]byte, error) {
 	}
 	defer conn.Close()
 
-	req := fmt.Sprintf("POST %s HTTP/1.1\r\nHost: ab.chatgpt.com\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s", path, len(body), body)
+	req := fmt.Sprintf("POST %s HTTP/1.1\r\nHost: ab.chatgpt.com\r\nContent-Type: application/json\r\nContent-Length: %d\r\nOrigin: https://chatgpt.com\r\nUser-Agent: Mozilla/5.0\r\nConnection: close\r\n\r\n%s", path, len(body), body)
 	conn.SetDeadline(time.Now().Add(15 * time.Second))
 	if _, err := conn.Write([]byte(req)); err != nil {
 		return nil, fmt.Errorf("write: %w", err)
