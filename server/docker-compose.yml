@@ -6,5 +6,4 @@ services:
     container_name: statsig-proxy
     restart: unless-stopped
     ports:
-      - "80:80"
       - "8318:443"
