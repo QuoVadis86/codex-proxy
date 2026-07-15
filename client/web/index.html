@@ -68,10 +68,12 @@ button {
   <h1>元数智慧</h1>
   <div class="sub" id="subtitle">Codex AI Proxy · 一键配置</div>
 
-  <label for="key">API Key</label>
-  <div class="input-row">
-    <input type="password" id="key" placeholder="请输入 API Key" autofocus>
-    <button class="btn-primary" id="btnLogin" onclick="login()" style="flex:0 0 auto; padding:12px 20px">登录</button>
+  <div id="loginSection">
+    <label for="key">API Key</label>
+    <div class="input-row">
+      <input type="password" id="key" placeholder="请输入 API Key" autofocus>
+      <button class="btn-primary" id="btnLogin" onclick="login()" style="flex:0 0 auto; padding:12px 20px">登录</button>
+    </div>
   </div>
 
   <div class="btns">
@@ -117,6 +119,7 @@ async function login() {
   try {
     const res = await api('login', { api_key: key });
     setStatus('statusLogin', res.ok ? '已登录' : '登录失败', res.ok, false);
+    document.getElementById("loginSection").style.display = "none";
     document.getElementById('btnLogin').style.display = 'none';
     document.getElementById('btnLogout').style.display = 'block';
     if (res.models) showModels(res.models);
@@ -131,8 +134,10 @@ async function logout() {
   document.getElementById('btnLogout').disabled = true;
   await api('logout');
   setStatus('statusLogin', '未登录', false, false);
+  document.getElementById('loginSection').style.display = 'block';
   document.getElementById('btnLogin').style.display = 'block';
   document.getElementById('btnLogout').style.display = 'none';
+  document.getElementById('statusServer').style.display = 'none';
   document.getElementById('modelsPanel').classList.remove('visible');
   document.getElementById('subtitle').textContent = 'Codex AI Proxy · 一键配置';
   document.getElementById('btnLogout').disabled = false;
@@ -150,6 +155,7 @@ async function refresh() {
   const loggedIn = res.logged_in;
   setStatus('statusLogin', loggedIn ? '已登录' : '未登录', loggedIn, false);
   if (loggedIn) {
+    document.getElementById("loginSection").style.display = "none";
     document.getElementById('btnLogin').style.display = 'none';
     document.getElementById('btnLogout').style.display = 'block';
     document.getElementById('key').value = '';
