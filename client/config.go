@@ -62,7 +62,21 @@ func cmdLogin() {
 			fmt.Printf("    • %s\n", m)
 		}
 	} else {
-		fmt.Println("  ✅ 已登录，直接启动服务")
+		// 已登录，但刷新模型配置（修复旧版本缺少的字段）
+		fmt.Println("  → 刷新模型配置...")
+		os.MkdirAll(yuanshuDir, 0755)
+		if data, err := os.ReadFile(configPath); err == nil {
+			for _, line := range strings.Split(string(data), "\n") {
+				if strings.HasPrefix(line, "experimental_bearer_token = ") {
+					apiKey := strings.Trim(strings.SplitN(line, "\"", 3)[1], "\"")
+					if models, err := fetchModels(apiKey); err == nil && len(models) > 0 {
+						writeModelCatalog(models)
+						fmt.Printf("  ✅ 已刷新，共 %d 个模型\n", len(models))
+					}
+					break
+				}
+			}
+		}
 	}
 
 	// 加 hosts + 启动本地劫持服务
