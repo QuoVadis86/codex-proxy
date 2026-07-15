@@ -3,6 +3,10 @@
 cd "$(dirname "$0")"
 rm -rf codex-proxy.app
 mkdir -p codex-proxy.app/Contents/MacOS
+mkdir -p codex-proxy.app/Contents/Resources
+
+# 复制图标
+cp codex-proxy.icns codex-proxy.app/Contents/Resources/
 
 cat > codex-proxy.app/Contents/Info.plist << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -19,6 +23,8 @@ cat > codex-proxy.app/Contents/Info.plist << PLIST
     <string>Codex AI Proxy</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
+    <key>CFBundleIconFile</key>
+    <string>codex-proxy.icns</string>
 </dict>
 </plist>
 PLIST
