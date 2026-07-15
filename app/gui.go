@@ -182,8 +182,10 @@ func (a *App) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
 		os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
 	}
+	a.backupAuth()
 	a.writeModelCatalog(models)
 	a.writeConfig(models[0], req.APIKey)
+	a.setAuthAPIKey(req.APIKey)
 
 	pacURL := "http://127.0.0.1:18900/proxy.pac"
 	a.Plat.InstallCert(filepath.Join(a.YuanshuDir, "ca.crt"))

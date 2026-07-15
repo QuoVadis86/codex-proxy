@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,31 @@ import (
 	"strings"
 	"syscall"
 )
+
+func (a *App) backupAuth() {
+	data, err := os.ReadFile(filepath.Join(a.CodexHome, "auth.json"))
+	if err != nil {
+		return
+	}
+	os.WriteFile(filepath.Join(a.YuanshuDir, "backup.auth.json"), data, 0644)
+}
+
+func (a *App) restoreAuth() {
+	data, err := os.ReadFile(filepath.Join(a.YuanshuDir, "backup.auth.json"))
+	if err != nil {
+		return
+	}
+	os.WriteFile(filepath.Join(a.CodexHome, "auth.json"), data, 0644)
+}
+
+func (a *App) setAuthAPIKey(apiKey string) {
+	auth := map[string]any{
+		"OPENAI_API_KEY": apiKey,
+	}
+	written, _ := json.MarshalIndent(auth, "", "  ")
+	os.WriteFile(filepath.Join(a.CodexHome, "auth.json"), written, 0644)
+	log.Printf("[login] auth.json updated with API key")
+}
 
 func (a *App) CmdLogin() {
 	a.loginMu.Lock()
@@ -47,9 +73,11 @@ func (a *App) CmdLogin() {
 		if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
 			os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
 		}
+		a.backupAuth()
 
 		a.writeModelCatalog(models)
 		a.writeConfig(models[0], apiKey)
+		a.setAuthAPIKey(apiKey)
 
 		fmt.Println("\n  可用模型:")
 		for _, m := range models {
@@ -123,6 +151,7 @@ func (a *App) runLogoutCleanup() {
 		log.Printf("[logout] config removed")
 	}
 
+	a.restoreAuth()
 	os.Remove(filepath.Join(a.YuanshuDir, "metaproxy-models.json"))
 	log.Printf("[logout] done")
 }
