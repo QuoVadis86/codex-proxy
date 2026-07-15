@@ -128,12 +128,12 @@ async function login() {
   el('btnLogin').disabled = true;
   el('btnLogin').textContent = '登录中...';
 
-  showStatus([{ cls:'info', dot:'off', text:'连接中...' }]);
+  showStatus([{ cls:'info', dot:'off', text:'登录中...' }]);
 
   try {
     const res = await api('login', { api_key: key });
     if (res.ok) {
-      showStatus([{ cls:'ok', dot:'on', text:'已就绪，模型已解锁' }]);
+      showStatus([{ cls:'ok', dot:'on', text:'已登录' }]);
       el('loginSection').style.display = 'none';
       el('footerSection').style.display = 'flex';
       el('btnLogout').style.display = 'block';
@@ -143,7 +143,7 @@ async function login() {
       showStatus([{ cls:'muted', dot:'off', text: res.message || '登录失败' }]);
     }
   } catch(e) {
-    showStatus([{ cls:'muted', dot:'off', text:'连接失败，请重试' }]);
+    showStatus([{ cls:'muted', dot:'off', text:'登录失败，请重试' }]);
   }
   el('btnLogin').textContent = '登录';
   el('btnLogin').disabled = false;
@@ -151,9 +151,9 @@ async function login() {
 
 async function logout() {
   el('btnLogout').disabled = true;
-  showStatus([{ cls:'info', dot:'off', text:'断开中...' }]);
+  showStatus([{ cls:'info', dot:'off', text:'退出中...' }]);
   await api('logout');
-  showStatus([{ cls:'muted', dot:'off', text:'已断开' }]);
+  showStatus([{ cls:'muted', dot:'off', text:'已退出' }]);
   el('loginSection').style.display = 'block';
   el('footerSection').style.display = 'none';
   el('btnLogout').style.display = 'none';
@@ -168,7 +168,7 @@ async function quitApp() {
   await api('quit');
 }
 async function refresh() {
-  showStatus([{ cls:'info', dot:'off', text:'检测中...' }]);
+  showStatus([{ cls:'info', dot:'off', text:'检查中...' }]);
   const res = await api('status');
   if (res.logged_in) {
     showStatus([{ cls:'ok', dot:'on', text:'已就绪' }]);
@@ -179,7 +179,7 @@ async function refresh() {
     el('subtitle').textContent = (res.models ? res.models.length + ' 个模型可用' : '已配置');
     if (res.models && res.models.length > 0) showModels(res.models);
   } else {
-    showStatus([{ cls:'muted', dot:'off', text:'未连接' }]);
+    showStatus([{ cls:'muted', dot:'off', text:'未登录' }]);
   }
 }
 refresh();
