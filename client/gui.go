@@ -66,16 +66,7 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 		serverRunning = proc != nil
 	}
 
-	models := 0
 	modelsPath := filepath.Join(yuanshuDir, "metaproxy-models.json")
-	if data, err := os.ReadFile(modelsPath); err == nil {
-		var result struct {
-			Models []any `json:"models"`
-		}
-		if json.Unmarshal(data, &result) == nil {
-			models = len(result.Models)
-		}
-	}
 
 	modelNames := []string{}
 	if data, err := os.ReadFile(modelsPath); err == nil {
