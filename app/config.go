@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-const statsigServer = "127.0.0.1"
-
 func (a *App) fetchModels(apiKey string) ([]string, error) {
 	log.Printf("[config] fetching models from %s", a.ProxyURL+"/models")
 	req, _ := http.NewRequest("GET", a.ProxyURL+"/models", nil)

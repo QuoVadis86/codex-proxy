@@ -3,9 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -96,41 +94,6 @@ func stripModels(data []byte) []byte {
 	}
 	cleaned, _ := json.Marshal(parsed)
 	return cleaned
-}
-
-var fallbackData = []byte(`{"feature_gates":{},"dynamic_configs":{},"layer_configs":{},"has_updates":true}`)
-
-func proxyToReal(originalReq *http.Request) ([]byte, error) {
-	ips, err := net.LookupHost("ab.chatgpt.com")
-	if err != nil {
-		return nil, fmt.Errorf("dns lookup: %w", err)
-	}
-	log.Printf("[proxy] DNS ab.chatgpt.com → %s", ips[0])
-
-	realURL := fmt.Sprintf("https://%s%s", ips[0], originalReq.URL.RequestURI())
-	proxyReq, err := http.NewRequest(originalReq.Method, realURL, originalReq.Body)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-
-	proxyReq.Header = originalReq.Header.Clone()
-	proxyReq.Host = "ab.chatgpt.com"
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{ServerName: "ab.chatgpt.com"},
-	}
-	client := &http.Client{Transport: tr, Timeout: 15 * time.Second}
-	resp, err := client.Do(proxyReq)
-	if err != nil {
-		return nil, fmt.Errorf("proxy request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("remote status %d", resp.StatusCode)
-	}
-
-	return io.ReadAll(resp.Body)
 }
 
 func (a *App) CmdServer() {

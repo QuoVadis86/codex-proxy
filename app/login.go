@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 func (a *App) CmdLogin() {
+	a.loginMu.Lock()
+	defer a.loginMu.Unlock()
+
 	configPath := filepath.Join(a.CodexHome, "config.toml")
 
 	alreadyLoggedIn := false
@@ -73,12 +78,26 @@ func (a *App) CmdLogin() {
 	log.Printf("[login] setting PAC...")
 	a.setPAC()
 
+	log.Printf("[login] starting proxy...")
+	go a.startProxy()
+
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║           🎉 登录成功                     ║")
+	fmt.Println("  ║   按 Ctrl+C 退出                         ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	<-sig
+
+	log.Printf("[login] shutting down...")
+	a.runLogoutCleanup()
 }
 
 func (a *App) CmdLogout() {
+	a.loginMu.Lock()
+	defer a.loginMu.Unlock()
+
 	log.Printf("[logout] starting logout")
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║           退出                           ║")

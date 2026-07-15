@@ -4,9 +4,11 @@ APP       = 元数AI.app
 DMG       = 元数AI.dmg
 PYTHON   ?= $(shell pyenv which python3 2>/dev/null || command -v python3)
 
-.PHONY: all icons mac win app dmg run clean
+.PHONY: all icons mac win app dmg run clean build
 
 all: mac win app dmg
+
+build: clean all
 
 icons:
 	$(PYTHON) scripts/make_macos_icon.py

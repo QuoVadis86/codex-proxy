@@ -4,12 +4,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type App struct {
 	CodexHome  string
 	YuanshuDir string
 	ProxyURL   string
+	loginMu    sync.Mutex
 }
 
 func New() *App {

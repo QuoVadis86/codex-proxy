@@ -152,6 +152,8 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleAPILogin(w http.ResponseWriter, r *http.Request) {
+	a.loginMu.Lock()
+	defer a.loginMu.Unlock()
 	body, _ := io.ReadAll(r.Body)
 	var req struct {
 		APIKey string `json:"api_key"`
