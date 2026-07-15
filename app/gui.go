@@ -126,7 +126,7 @@ func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
 	configPath := filepath.Join(a.CodexHome, "config.toml")
 	loggedIn := false
 	if data, err := os.ReadFile(configPath); err == nil {
-		loggedIn = strings.Contains(string(data), "custom-proxy")
+		loggedIn = strings.Contains(string(data), a.ProxyURL)
 	}
 
 	modelsPath := filepath.Join(a.YuanshuDir, "metaproxy-models.json")
@@ -179,7 +179,7 @@ func (a *App) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 
 	os.MkdirAll(a.YuanshuDir, 0755)
 	configPath := filepath.Join(a.CodexHome, "config.toml")
-	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), "custom-proxy") {
+	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
 		os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
 	}
 	a.writeModelCatalog(models)

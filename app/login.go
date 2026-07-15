@@ -17,7 +17,7 @@ func (a *App) CmdLogin() {
 	configPath := filepath.Join(a.CodexHome, "config.toml")
 
 	alreadyLoggedIn := false
-	if data, err := os.ReadFile(configPath); err == nil && strings.Contains(string(data), "custom-proxy") {
+	if data, err := os.ReadFile(configPath); err == nil && strings.Contains(string(data), a.ProxyURL) {
 		alreadyLoggedIn = true
 		log.Printf("[login] detected existing config, refresh mode")
 	}
@@ -44,7 +44,7 @@ func (a *App) CmdLogin() {
 		fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
 
 		os.MkdirAll(a.YuanshuDir, 0755)
-		if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), "custom-proxy") {
+		if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
 			os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
 		}
 
