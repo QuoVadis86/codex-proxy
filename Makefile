@@ -25,7 +25,7 @@ run: mac
 win:
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
-		-ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY).exe .
+		-ldflags="-s -w -H windowsgui" -o $(BUILD_DIR)/$(BINARY).exe .
 	@echo "✅  $(BUILD_DIR)/$(BINARY).exe"
 
 app: mac
