@@ -9,10 +9,8 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -89,48 +87,6 @@ func handlePAC(w http.ResponseWriter, r *http.Request) {
 }`))
 }
 
-func (a *App) setPAC() {
-	pacURL := "http://127.0.0.1:18900/proxy.pac"
-	if runtime.GOOS == "darwin" {
-		out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
-		for _, svc := range strings.Fields(string(out)) {
-			if svc == "An asterisk (*) denotes that a network service is disabled." {
-				continue
-			}
-			exec.Command("networksetup", "-setautoproxyurl", svc, pacURL).Run()
-			exec.Command("networksetup", "-setautoproxystate", svc, "on").Run()
-		}
-		log.Printf("[pac] set for all network services (macOS)")
-	} else if runtime.GOOS == "windows" {
-		exec.Command("reg", "add",
-			"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
-			"/v", "AutoConfigURL",
-			"/t", "REG_SZ",
-			"/d", pacURL,
-			"/f").Run()
-		log.Printf("[pac] set via registry (Windows)")
-	}
-}
-
-func (a *App) unsetPAC() {
-	if runtime.GOOS == "darwin" {
-		out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
-		for _, svc := range strings.Fields(string(out)) {
-			if svc == "An asterisk (*) denotes that a network service is disabled." {
-				continue
-			}
-			exec.Command("networksetup", "-setautoproxystate", svc, "off").Run()
-		}
-		log.Printf("[pac] cleared for all network services (macOS)")
-	} else if runtime.GOOS == "windows" {
-		exec.Command("reg", "delete",
-			"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
-			"/v", "AutoConfigURL",
-			"/f").Run()
-		log.Printf("[pac] cleared via registry (Windows)")
-	}
-}
-
 func (a *App) runningGUIURL() (string, bool) {
 	pidPath := filepath.Join(a.YuanshuDir, "gui.pid")
 	data, err := os.ReadFile(pidPath)
@@ -154,38 +110,13 @@ func (a *App) runningGUIURL() (string, bool) {
 }
 
 func (a *App) writeGUIState(url string) {
-	os.WriteFile(filepath.Join(a.YuanshuDir, "gui.pid"), []byte(fmt.Sprintf("%d", os.Getpid())), 0644)
+	os.WriteFile(filepath.Join(a.YuanshuDir, "gui.pid"), fmt.Appendf(nil, "%d", os.Getpid()), 0644)
 	os.WriteFile(filepath.Join(a.YuanshuDir, "gui.url"), []byte(url), 0644)
 }
 
 func (a *App) cleanupGUIState() {
 	os.Remove(filepath.Join(a.YuanshuDir, "gui.pid"))
 	os.Remove(filepath.Join(a.YuanshuDir, "gui.url"))
-}
-
-func processRunning(pid int) bool {
-	if pid <= 0 {
-		return false
-	}
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return false
-	}
-	if runtime.GOOS == "windows" {
-		out, _ := exec.Command("tasklist", "/FI", fmt.Sprintf("PID eq %d", pid), "/NH").Output()
-		return strings.Contains(string(out), fmt.Sprintf("%d", pid))
-	}
-	return proc.Signal(syscall.Signal(0)) == nil
-}
-
-func openBrowser(url string) {
-	go func() {
-		if runtime.GOOS == "darwin" {
-			exec.Command("open", url).Start()
-		} else if runtime.GOOS == "windows" {
-			exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-		}
-	}()
 }
 
 func (a *App) handleStatus(w http.ResponseWriter, r *http.Request) {
