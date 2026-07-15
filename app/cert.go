@@ -35,11 +35,6 @@ func deterministicReader(seed string) io.Reader {
 	return cipher.StreamReader{S: stream, R: zeroReader{}}
 }
 
-func (a *App) CACertPEM() []byte {
-	_, pem, _ := a.ensureCA()
-	return pem
-}
-
 func (a *App) ensureCA() (cert *tls.Certificate, certPEM []byte, fresh bool) {
 	certPath := filepath.Join(a.YuanshuDir, "ca.crt")
 	keyPath := filepath.Join(a.YuanshuDir, "ca.key")
@@ -55,7 +50,7 @@ func (a *App) ensureCA() (cert *tls.Certificate, certPEM []byte, fresh bool) {
 		os.Remove(certPath)
 	}
 
-	seed := machineID()
+	seed := a.Plat.MachineID()
 	log.Printf("[ca] generating CA from machine seed (%s...) ", seed[:8])
 
 	reader := deterministicReader(seed)

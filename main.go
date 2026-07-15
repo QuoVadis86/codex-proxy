@@ -21,7 +21,7 @@ func main() {
 			a.CmdServer()
 			return
 		case "uninstall":
-			a.RemoveCert()
+		a.Plat.RemoveCert()
 			return
 		}
 	}

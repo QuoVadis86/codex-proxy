@@ -73,10 +73,10 @@ func (a *App) CmdLogin() {
 	}
 
 	log.Printf("[login] installing CA...")
-	a.InstallCert()
+	a.Plat.InstallCert(filepath.Join(a.YuanshuDir, "ca.crt"))
 
 	log.Printf("[login] setting PAC...")
-	a.setPAC()
+	a.Plat.SetPAC("http://127.0.0.1:18900/proxy.pac")
 
 	log.Printf("[login] starting proxy...")
 	go a.startProxy()
@@ -111,7 +111,7 @@ func (a *App) CmdLogout() {
 }
 
 func (a *App) runLogoutCleanup() {
-	a.unsetPAC()
+	a.Plat.UnsetPAC()
 
 	backupPath := filepath.Join(a.YuanshuDir, "backup.config.toml")
 	configPath := filepath.Join(a.CodexHome, "config.toml")

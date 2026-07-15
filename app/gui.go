@@ -23,14 +23,14 @@ func (a *App) CmdGUI() {
 	fmt.Println("  正在启动界面...")
 	os.MkdirAll(a.YuanshuDir, 0755)
 
-	a.unsetPAC()
+	a.Plat.UnsetPAC()
 	defer a.runLogoutCleanup()
 
 	go a.startProxy()
 	time.Sleep(500 * time.Millisecond)
 
 	if url, ok := a.runningGUIURL(); ok {
-		openBrowser(url)
+	a.Plat.OpenBrowser(url)
 		fmt.Printf("  已有实例正在运行: %s\n", url)
 		return
 	}
@@ -70,7 +70,7 @@ func (a *App) CmdGUI() {
 		listener.Close()
 	}()
 
-	openBrowser(url)
+	a.Plat.OpenBrowser(url)
 	fmt.Printf("  浏览器已打开: %s\n", url)
 	fmt.Println("  关闭窗口后按 Ctrl+C 退出")
 	if err := http.Serve(listener, mux); err != nil {
@@ -98,7 +98,7 @@ func (a *App) runningGUIURL() (string, bool) {
 	}
 
 	var pid int
-	if _, err := fmt.Sscanf(string(data), "%d", &pid); err != nil || !processRunning(pid) {
+	if _, err := fmt.Sscanf(string(data), "%d", &pid); err != nil || !a.Plat.ProcessRunning(pid) {
 		a.cleanupGUIState()
 		return "", false
 	}
@@ -185,8 +185,9 @@ func (a *App) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 	a.writeModelCatalog(models)
 	a.writeConfig(models[0], req.APIKey)
 
-	a.InstallCert()
-	a.setPAC()
+	pacURL := "http://127.0.0.1:18900/proxy.pac"
+	a.Plat.InstallCert(filepath.Join(a.YuanshuDir, "ca.crt"))
+	a.Plat.SetPAC(pacURL)
 
 	log.Printf("[gui] login OK — %d models", len(models))
 	json.NewEncoder(w).Encode(map[string]any{
