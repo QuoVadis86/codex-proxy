@@ -89,15 +89,14 @@ func (a *App) CmdLogin() {
 	} else {
 		log.Printf("[login] refresh mode")
 		os.MkdirAll(a.YuanshuDir, 0755)
-		if data, err := os.ReadFile(configPath); err == nil {
-			for _, line := range strings.Split(string(data), "\n") {
-				if strings.HasPrefix(line, "experimental_bearer_token = ") {
-					apiKey := strings.Trim(strings.SplitN(line, "\"", 3)[1], "\"")
-					if models, err := a.fetchModels(apiKey); err == nil && len(models) > 0 {
-						a.writeModelCatalog(models)
-						fmt.Printf("  ✅ 已刷新，共 %d 个模型\n", len(models))
-					}
-					break
+		if data, err := os.ReadFile(filepath.Join(a.CodexHome, "auth.json")); err == nil {
+			var auth struct {
+				APIKey string `json:"OPENAI_API_KEY"`
+			}
+			if json.Unmarshal(data, &auth) == nil && auth.APIKey != "" {
+				if models, err := a.fetchModels(auth.APIKey); err == nil && len(models) > 0 {
+					a.writeModelCatalog(models)
+					fmt.Printf("  ✅ 已刷新，共 %d 个模型\n", len(models))
 				}
 			}
 		}
