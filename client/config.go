@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -17,59 +19,96 @@ var codexHome = filepath.Join(os.Getenv("HOME"), ".codex")
 var yuanshuDir = filepath.Join(codexHome, "yuanshu")
 
 func cmdLogin() {
-	// 已登录检测
+	alreadyLoggedIn := false
 	configPath := filepath.Join(codexHome, "config.toml")
 	if data, err := os.ReadFile(configPath); err == nil && strings.Contains(string(data), "custom-proxy") {
-		fmt.Println("  ✅ 已经登录过了")
-		return
+		alreadyLoggedIn = true
 	}
 
-	// 输入 API Key
-	fmt.Print("  请输入你的 API Key: ")
-	var apiKey string
-	fmt.Scanln(&apiKey)
-	if apiKey == "" {
-		fmt.Println("  ❌ API Key 不能为空")
-		return
+	if !alreadyLoggedIn {
+		// 输入 API Key
+		fmt.Print("  请输入你的 API Key: ")
+		var apiKey string
+		fmt.Scanln(&apiKey)
+		if apiKey == "" {
+			fmt.Println("  ❌ API Key 不能为空")
+			return
+		}
+
+		// 连接服务器
+		fmt.Println("\n  → 正在连接服务器...")
+		models, err := fetchModels(apiKey)
+		if err != nil {
+			fmt.Printf("  ⚠️  连接失败: %v\n", err)
+			return
+		}
+		fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
+
+		// 备份
+		os.MkdirAll(yuanshuDir, 0755)
+		if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), "custom-proxy") {
+			os.WriteFile(filepath.Join(yuanshuDir, "backup.config.toml"), data, 0644)
+		}
+
+		// 生成模型配置
+		writeModelCatalog(models)
+		writeConfig(models[0], apiKey)
+
+		fmt.Println("\n  可用模型:")
+		for _, m := range models {
+			fmt.Printf("    • %s\n", m)
+		}
+	} else {
+		fmt.Println("  ✅ 已登录，直接启动服务")
 	}
 
-	// 连接服务器
-	fmt.Println("\n  → 正在连接服务器...")
-	models, err := fetchModels(apiKey)
-	if err != nil {
-		fmt.Printf("  ⚠️  连接失败: %v\n", err)
-		return
-	}
-	fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
-
-	// 备份
-	os.MkdirAll(yuanshuDir, 0755)
-	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), "custom-proxy") {
-		os.WriteFile(filepath.Join(yuanshuDir, "backup.config.toml"), data, 0644)
-	}
-
-	// 生成模型配置
-	writeModelCatalog(models)
-
-	// 写 config.toml
-	writeConfig(models[0], apiKey)
-
-	// 加 hosts（需要管理员）
+	// 加 hosts + 启动本地劫持服务
 	addHosts()
+	startHijackServer()
 
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║           🎉 登录成功                     ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
-	fmt.Println("\n  可用模型:")
-	for _, m := range models {
-		fmt.Printf("    • %s\n", m)
+}
+
+func startHijackServer() {
+	fmt.Println("  → 启动 Statsig 劫持服务...")
+
+	// 启动子进程运行 server
+	exe, _ := os.Executable()
+	cmd := exec.Command(exe, "server", "3000")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if err := cmd.Start(); err != nil {
+		fmt.Println("  ⚠️  启动失败:", err)
+		return
 	}
+
+	// 记下 PID
+	pidPath := filepath.Join(yuanshuDir, "proxy.pid")
+	os.WriteFile(pidPath, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0644)
+	fmt.Println("  ✅ Statsig 劫持服务已启动")
 }
 
 func cmdLogout() {
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║       元数智慧 AI Proxy · 退出            ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
+
+	// 停掉劫持服务
+	pidPath := filepath.Join(yuanshuDir, "proxy.pid")
+	if data, err := os.ReadFile(pidPath); err == nil {
+		var pid int
+		fmt.Sscanf(string(data), "%d", &pid)
+		proc, err := os.FindProcess(pid)
+		if err == nil {
+			proc.Kill()
+			fmt.Println("  ✅ 劫持服务已停止")
+		}
+		os.Remove(pidPath)
+	}
 
 	// 恢复配置
 	backupPath := filepath.Join(yuanshuDir, "backup.config.toml")
