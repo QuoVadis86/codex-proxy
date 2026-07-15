@@ -3,16 +3,34 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/pem"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 func (a *App) IsCertInstalled() bool {
-	out, _ := exec.Command("security", "find-certificate", "-c", "YuanshuCA").Output()
-	return strings.Contains(string(out), "YuanshuCA")
+	localPEM, err := os.ReadFile(filepath.Join(a.YuanshuDir, "ca.crt"))
+	if err != nil {
+		return false
+	}
+	block, _ := pem.Decode(localPEM)
+	if block == nil {
+		return false
+	}
+	localHash := sha256.Sum256(block.Bytes)
+
+	out, _ := exec.Command("security", "find-certificate", "-c", "YuanshuCA", "-p").Output()
+	installedBlock, _ := pem.Decode(out)
+	if installedBlock == nil {
+		return false
+	}
+	installedHash := sha256.Sum256(installedBlock.Bytes)
+
+	return localHash == installedHash
 }
 
 func (a *App) InstallCert() bool {
@@ -20,9 +38,8 @@ func (a *App) InstallCert() bool {
 		log.Printf("[ca] already installed, skipping")
 		return true
 	}
-
-	a.ensureCA()
 	certPath := filepath.Join(a.YuanshuDir, "ca.crt")
+	a.ensureCA()
 
 	log.Printf("[ca] installing...")
 	script := fmt.Sprintf(
@@ -39,9 +56,6 @@ func (a *App) InstallCert() bool {
 }
 
 func (a *App) RemoveCert() {
-	if !a.IsCertInstalled() {
-		return
-	}
 	script := `do shell script "security delete-certificate -c 'YuanshuCA'" with administrator privileges`
 	exec.Command("osascript", "-e", script).Run()
 }

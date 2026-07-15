@@ -151,16 +151,30 @@ func (a *App) writeModelCatalog(models []string) {
 }
 
 func (a *App) writeConfig(firstModel, apiKey string) {
-	config := fmt.Sprintf(`model = "%s"
-model_provider = "custom-proxy"
-model_reasoning_effort = "medium"
-model_catalog_json = "%s"
+	configPath := filepath.Join(a.CodexHome, "config.toml")
+	existing, _ := os.ReadFile(configPath)
 
-[model_providers.custom-proxy]
-name = "元数AI"
-base_url = "%s"
-experimental_bearer_token = "%s"
-requires_openai_auth = false
-`, firstModel, filepath.Join(a.YuanshuDir, "metaproxy-models.json"), a.ProxyURL, apiKey)
-	os.WriteFile(filepath.Join(a.CodexHome, "config.toml"), []byte(config), 0644)
+	ourKeys := fmt.Sprintf(`
+model = "%s"
+openai_base_url = "%s"
+model_catalog_json = "%s"
+model_reasoning_effort = "medium"
+`, firstModel, a.ProxyURL, filepath.Join(a.YuanshuDir, "metaproxy-models.json"))
+
+	existingStr := string(existing)
+	for _, key := range []string{"model", "openai_base_url", "model_catalog_json"} {
+		lines := strings.Split(existingStr, "\n")
+		var keep []string
+		for _, line := range lines {
+			if strings.HasPrefix(strings.TrimSpace(line), key+" =") {
+				continue
+			}
+			keep = append(keep, line)
+		}
+		existingStr = strings.Join(keep, "\n")
+	}
+
+	merged := ourKeys + "\n" + existingStr
+	os.WriteFile(configPath, []byte(merged), 0644)
+	log.Printf("[config] config written")
 }

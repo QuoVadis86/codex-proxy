@@ -17,7 +17,7 @@ import (
 const proxyPort = ":9090"
 
 func (a *App) startProxy() {
-	ca, _ := a.ensureCA()
+	ca, _, _ := a.ensureCA()
 
 	goproxy.GoproxyCa = *ca
 	goproxy.OkConnect = &goproxy.ConnectAction{
