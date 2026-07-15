@@ -290,7 +290,7 @@ model_reasoning_effort = "medium"
 model_catalog_json = "%s"
 
 [model_providers.custom-proxy]
-name = "元数智慧 · Codex AI Proxy"
+name = "元数AI"
 base_url = "%s"
 experimental_bearer_token = "%s"
 requires_openai_auth = false
