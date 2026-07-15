@@ -7,7 +7,7 @@ mkdir -p "$APP/Contents/MacOS"
 mkdir -p "$APP/Contents/Resources"
 
 # 复制图标
-cp codex-proxy.icns "$APP/Contents/Resources/"
+cp yuanshu-ai.icns "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -25,7 +25,7 @@ cat > "$APP/Contents/Info.plist" << PLIST
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleIconFile</key>
-    <string>codex-proxy.icns</string>
+    <string>yuanshu-ai.icns</string>
 </dict>
 </plist>
 PLIST
