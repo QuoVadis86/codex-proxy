@@ -39,11 +39,11 @@ func cmdLogin() {
 		fmt.Println("\n  → 正在连接服务器...")
 		models, err := fetchModels(apiKey)
 		if err != nil {
-			fmt.Printf("  ⚠️  连接失败: %v\n", err)
+			fmt.Printf("  ❌ 登录失败: %v\n", err)
 			return
 		}
 		if len(models) == 0 {
-			fmt.Println("  ⚠️  未获取到模型列表")
+			fmt.Println("  ❌ 未获取到模型列表，登录失败")
 			return
 		}
 		fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
@@ -146,13 +146,20 @@ func fetchModels(apiKey string) ([]string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		return nil, fmt.Errorf("API Key 错误，请检查后重试")
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("服务器返回错误: %d", resp.StatusCode)
+	}
+
 	var result struct {
 		Data []struct {
 			ID string `json:"id"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("解析响应失败: %v", err)
 	}
 
 	var models []string
