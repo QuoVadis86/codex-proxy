@@ -13,7 +13,7 @@ import (
 )
 
 const proxyURL = "http://113.90.157.107:8317/v1"
-const statsigServer = "94.191.115.90"
+const statsigServer = "127.0.0.1"
 
 var codexHome = filepath.Join(os.Getenv("HOME"), ".codex")
 var yuanshuDir = filepath.Join(codexHome, "yuanshu")
@@ -40,6 +40,10 @@ func cmdLogin() {
 		models, err := fetchModels(apiKey)
 		if err != nil {
 			fmt.Printf("  ⚠️  连接失败: %v\n", err)
+			return
+		}
+		if len(models) == 0 {
+			fmt.Println("  ⚠️  未获取到模型列表")
 			return
 		}
 		fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
