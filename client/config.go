@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -83,7 +82,7 @@ func startHijackServer() {
 	cmd := exec.Command(exe, "server", "3000")
 	cmd.Stdout = nil
 	cmd.Stderr = nil
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = setProcessGroupAttr()
 
 	if err := cmd.Start(); err != nil {
 		fmt.Println("  ⚠️  启动失败:", err)
