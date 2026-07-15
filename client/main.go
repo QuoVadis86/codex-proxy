@@ -1,27 +1,21 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
+import "os"
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("用法: codex-proxy <login|logout|server>")
-		os.Exit(1)
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "login":
+			cmdLogin()
+			return
+		case "logout":
+			cmdLogout()
+			return
+		case "server":
+			cmdServer()
+			return
+		}
 	}
-	switch os.Args[1] {
-	case "login":
-		cmdLogin()
-	case "logout":
-		cmdLogout()
-	case "server":
-		cmdServer()
-	case "gui", "":
-		cmdGUI()
-	default:
-		fmt.Printf("未知命令: %s\n", os.Args[1])
-		fmt.Println("可用命令: login, logout, server, gui")
-		os.Exit(1)
-	}
+	// 默认启动 GUI 界面
+	cmdGUI()
 }
