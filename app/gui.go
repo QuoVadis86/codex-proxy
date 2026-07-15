@@ -178,11 +178,7 @@ func (a *App) handleAPILogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	os.MkdirAll(a.YuanshuDir, 0755)
-	configPath := filepath.Join(a.CodexHome, "config.toml")
-	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
-		os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
-	}
-	a.backupAuth()
+	a.backupOrigin()
 	a.writeModelCatalog(models)
 	a.writeConfig(models[0], req.APIKey)
 	a.setAuthAPIKey(req.APIKey)

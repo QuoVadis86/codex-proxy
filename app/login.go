@@ -11,26 +11,35 @@ import (
 	"syscall"
 )
 
-func (a *App) backupAuth() {
-	data, err := os.ReadFile(filepath.Join(a.CodexHome, "auth.json"))
-	if err != nil {
-		return
+func (a *App) backupOrigin() {
+	os.MkdirAll(a.YuanshuDir, 0755)
+	configPath := filepath.Join(a.CodexHome, "config.toml")
+	if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
+		os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
 	}
-	os.WriteFile(filepath.Join(a.YuanshuDir, "backup.auth.json"), data, 0644)
+	authPath := filepath.Join(a.CodexHome, "auth.json")
+	if data, err := os.ReadFile(authPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
+		os.WriteFile(filepath.Join(a.YuanshuDir, "backup.auth.json"), data, 0644)
+	}
 }
 
-func (a *App) restoreAuth() {
-	data, err := os.ReadFile(filepath.Join(a.YuanshuDir, "backup.auth.json"))
-	if err != nil {
-		return
+func (a *App) restoreOrigin() {
+	backupPath := filepath.Join(a.YuanshuDir, "backup.config.toml")
+	configPath := filepath.Join(a.CodexHome, "config.toml")
+	if data, err := os.ReadFile(backupPath); err == nil {
+		os.WriteFile(configPath, data, 0644)
+	} else {
+		os.Remove(configPath)
 	}
-	os.WriteFile(filepath.Join(a.CodexHome, "auth.json"), data, 0644)
+	authPath := filepath.Join(a.CodexHome, "auth.json")
+	if data, err := os.ReadFile(filepath.Join(a.YuanshuDir, "backup.auth.json")); err == nil {
+		os.WriteFile(authPath, data, 0644)
+	}
+	os.Remove(filepath.Join(a.YuanshuDir, "metaproxy-models.json"))
 }
 
 func (a *App) setAuthAPIKey(apiKey string) {
-	auth := map[string]any{
-		"OPENAI_API_KEY": apiKey,
-	}
+	auth := map[string]any{"OPENAI_API_KEY": apiKey}
 	written, _ := json.MarshalIndent(auth, "", "  ")
 	os.WriteFile(filepath.Join(a.CodexHome, "auth.json"), written, 0644)
 	log.Printf("[login] auth.json updated with API key")
@@ -41,7 +50,6 @@ func (a *App) CmdLogin() {
 	defer a.loginMu.Unlock()
 
 	configPath := filepath.Join(a.CodexHome, "config.toml")
-
 	alreadyLoggedIn := false
 	if data, err := os.ReadFile(configPath); err == nil && strings.Contains(string(data), a.ProxyURL) {
 		alreadyLoggedIn = true
@@ -69,12 +77,7 @@ func (a *App) CmdLogin() {
 		}
 		fmt.Printf("  ✅ 连接成功！共 %d 个模型\n", len(models))
 
-		os.MkdirAll(a.YuanshuDir, 0755)
-		if data, err := os.ReadFile(configPath); err == nil && !strings.Contains(string(data), a.ProxyURL) {
-			os.WriteFile(filepath.Join(a.YuanshuDir, "backup.config.toml"), data, 0644)
-		}
-		a.backupAuth()
-
+		a.backupOrigin()
 		a.writeModelCatalog(models)
 		a.writeConfig(models[0], apiKey)
 		a.setAuthAPIKey(apiKey)
@@ -102,10 +105,8 @@ func (a *App) CmdLogin() {
 
 	log.Printf("[login] installing CA...")
 	a.Plat.InstallCert(filepath.Join(a.YuanshuDir, "ca.crt"))
-
 	log.Printf("[login] setting PAC...")
 	a.Plat.SetPAC("http://127.0.0.1:18900/proxy.pac")
-
 	log.Printf("[login] starting proxy...")
 	go a.startProxy()
 
@@ -130,9 +131,7 @@ func (a *App) CmdLogout() {
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║           退出                           ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
-
 	a.runLogoutCleanup()
-
 	fmt.Println("\n  ╔═══════════════════════════════════════════╗")
 	fmt.Println("  ║           🎉 已退出                       ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
@@ -140,18 +139,6 @@ func (a *App) CmdLogout() {
 
 func (a *App) runLogoutCleanup() {
 	a.Plat.UnsetPAC()
-
-	backupPath := filepath.Join(a.YuanshuDir, "backup.config.toml")
-	configPath := filepath.Join(a.CodexHome, "config.toml")
-	if data, err := os.ReadFile(backupPath); err == nil {
-		os.WriteFile(configPath, data, 0644)
-		log.Printf("[logout] config restored")
-	} else {
-		os.Remove(configPath)
-		log.Printf("[logout] config removed")
-	}
-
-	a.restoreAuth()
-	os.Remove(filepath.Join(a.YuanshuDir, "metaproxy-models.json"))
+	a.restoreOrigin()
 	log.Printf("[logout] done")
 }
