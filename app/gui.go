@@ -42,6 +42,7 @@ func (a *App) CmdGUI() {
 	mux.HandleFunc("/api/status", a.handleStatus)
 	mux.HandleFunc("/api/login", a.handleAPILogin)
 	mux.HandleFunc("/api/logout", a.handleAPILogout)
+	mux.HandleFunc("/api/quit", a.handleAPIQuit)
 	mux.HandleFunc("/proxy.pac", handlePAC)
 
 	port := "18900"
@@ -262,4 +263,11 @@ func (a *App) handleAPILogout(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[gui] POST /api/logout")
 	a.runLogoutCleanup()
 	json.NewEncoder(w).Encode(map[string]any{"ok": true, "message": "已退出并清理"})
+}
+
+func (a *App) handleAPIQuit(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[gui] POST /api/quit — shutting down")
+	json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	a.runLogoutCleanup()
+	os.Exit(0)
 }

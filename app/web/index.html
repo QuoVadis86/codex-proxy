@@ -88,8 +88,13 @@ button {
   </div>
 
   <div class="footer" id="footerSection" style="display:none">
-    <button class="btn-outline" id="btnLogout" onclick="logout()" style="display:none">退出</button>
-    <span id="modelCount" style="font-size:12px;color:#888"></span>
+    <div>
+      <button class="btn-outline" id="btnLogout" onclick="logout()" style="display:none">退出</button>
+    </div>
+    <div>
+      <span id="modelCount" style="font-size:12px;color:#888;margin-right:8px"></span>
+      <button class="btn-danger" id="btnQuit" onclick="quitApp()" style="font-size:12px;padding:6px 12px">关闭应用</button>
+    </div>
   </div>
 </div>
 
@@ -161,6 +166,10 @@ async function logout() {
   el('key').focus();
 }
 
+async function quitApp() {
+  if (!confirm('确定关闭元数AI？')) return;
+  await api('quit');
+}
 async function refresh() {
   showStatus([{ cls:'info', dot:'off', text:'检查状态...' }]);
   const res = await api('status');
