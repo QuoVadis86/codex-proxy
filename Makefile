@@ -16,6 +16,8 @@ endif
 all: mac win
 
 build: clean all
+	@$(MAKE) app 2>/dev/null || true
+	@$(MAKE) dmg 2>/dev/null || true
 
 mac:
 	@mkdir -p $(BUILD_DIR)
