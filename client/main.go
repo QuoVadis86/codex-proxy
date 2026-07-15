@@ -17,9 +17,11 @@ func main() {
 		cmdLogout()
 	case "server":
 		cmdServer()
+	case "gui", "":
+		cmdGUI()
 	default:
 		fmt.Printf("未知命令: %s\n", os.Args[1])
-		fmt.Println("可用命令: login, logout, server")
+		fmt.Println("可用命令: login, logout, server, gui")
 		os.Exit(1)
 	}
 }
