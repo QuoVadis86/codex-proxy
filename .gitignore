@@ -1,7 +1,8 @@
 .DS_Store
 *.app
-*.app
 *.dmg
 *.zip
 *.syso
 logo-final.png
+logo-cropped.png
+client/build/

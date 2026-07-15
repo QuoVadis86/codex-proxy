@@ -1,48 +1,45 @@
-# 元数智慧 · Codex AI Proxy
+# 元数AI
 
-一键配置 Codex 使用自定义 AI 模型（DeepSeek / Qwen），并修复界面语言为中文。
+一键配置 Codex 使用自定义 AI 模型。
 
-## 使用方法
+## 使用
 
-### macOS
+**macOS**: 下载 `元数AI.dmg` → 安装 → 双击运行
 
-1. 把 `mac/login.command` 发给用户
-2. 双击，输入 API Key
-3. 弹密码时点确认（装证书 + 改 hosts）
+**Windows**: 下载 `yuanshu-ai.exe` → 双击运行
 
-退出时双击 `mac/logout.command` 即可还原。
-
-### 服务器部署
+## 从源码构建
 
 ```bash
-docker load -i server/statsig-proxy.tar
-docker run -d --restart always -p 443:443 --name statsig-proxy statsig-proxy:1.0
+cd client
+
+# macOS
+CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o yuanshu-ai
+
+# Windows
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o yuanshu-ai.exe
+
+# 打包 .app
+bash build-app.sh
+
+# 打包 .dmg
+bash build-dmg.sh
 ```
 
-同时需要在 80 端口提供 `/ca.crt`（供 login.command 下载）。
-
-### 构建
-
-```bash
-cd server
-go build -ldflags="-s -w" -o statsig-proxy main.go
-upx --best statsig-proxy -o statsig-proxy-compressed
-docker build -t statsig-proxy:1.0 .
-```
-
-## 目录结构
+## 目录
 
 ```
-codex-proxy/
-├── mac/
-│   ├── login.command        # 给用户的登录脚本（唯一需要的文件）
-│   └── logout.command       # 给用户的退出脚本
-├── server/
-│   ├── main.go              # Go 源码
-│   ├── Dockerfile           # 构建文件
-│   ├── statsig-proxy.tar    # 预编译镜像 (2.3MB)
-│   ├── ca.crt               # CA 证书（服务器提供下载）
-│   ├── server.crt           # 服务器证书
-│   └── server.key           # 服务器私钥
-└── README.md
+client/
+├── main.go           # 入口
+├── config.go         # 登录/退出逻辑
+├── server.go         # Statsig 加速服务
+├── cert.go           # 证书管理
+├── hosts.go          # hosts 管理
+├── gui.go            # Web GUI
+├── web/index.html    # GUI 页面
+├── yuanshu-ai.icns   # macOS 图标
+├── yuanshu-ai.ico    # Windows 图标
+├── build-app.sh      # 构建 .app
+├── build-dmg.sh      # 构建 .dmg
+└── 元数AI.command     # 双击启动脚本
 ```
