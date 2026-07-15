@@ -189,20 +189,39 @@ func writeModelCatalog(models []string) {
 		Effort      string `json:"effort"`
 		Description string `json:"description"`
 	}
-	type ModelEntry struct {
-		Slug                    string  `json:"slug"`
-		DisplayName             string  `json:"display_name"`
-		Description             string  `json:"description"`
-		SupportedReasoningLevels []Level `json:"supported_reasoning_levels"`
-		Priority                int     `json:"priority"`
-		ContextWindow           int     `json:"context_window,omitempty"`
-		MaxContextWindow        int     `json:"max_context_window,omitempty"`
-		ShellType               string  `json:"shell_type"`
-		Visibility              string  `json:"visibility"`
-		SupportedInAPI          bool    `json:"supported_in_api"`
-		BaseInstructions        string  `json:"base_instructions"`
-		SupportsReasoning       bool    `json:"supports_reasoning_summaries"`
-		SupportVerbosity        bool    `json:"support_verbosity"`
+
+	truncPolicy := map[string]any{
+		"mode": "tokens", "limit": 100000,
+	}
+	modalities := []string{"text", "image"}
+
+	template := map[string]any{
+		"shell_type": "shell_command", "visibility": "list",
+		"supported_in_api": true,
+		"additional_speed_tiers": []any{},
+		"service_tiers":         []any{},
+		"availability_nux":      nil,
+		"upgrade":               nil,
+		"base_instructions":      "You are Codex, a coding agent.",
+		"model_messages":         map[string]any{},
+		"include_skills_usage_instructions": true,
+		"supports_reasoning_summaries":      true,
+		"default_reasoning_summary":         "none",
+		"support_verbosity": true,
+		"default_verbosity":  "low",
+		"apply_patch_tool_type":    "freeform",
+		"web_search_tool_type":     "text_and_image",
+		"truncation_policy":        truncPolicy,
+		"supports_parallel_tool_calls":       true,
+		"supports_image_detail_original":     true,
+		"context_window":            1000000,
+		"max_context_window":        1000000,
+		"effective_context_window_percent": 95,
+		"experimental_supported_tools": []any{},
+		"input_modalities":   modalities,
+		"supports_search_tool": true,
+		"use_responses_lite":   false,
+		"default_reasoning_level": "medium",
 	}
 
 	known := map[string]string{
@@ -241,21 +260,21 @@ func writeModelCatalog(models []string) {
 		return []Level{{"low", "Fast"}, {"medium", "Balanced"}, {"high", "Deep"}}
 	}
 
-	var entries []ModelEntry
+	var entries []map[string]any
 	for i, slug := range models {
-		e := ModelEntry{
-			Slug: slug, DisplayName: slugDisplay(slug),
-			Description:             slugDisplay(slug) + " via proxy",
-			SupportedReasoningLevels: levels(slug),
-			Priority: i + 1,
-			ShellType: "shell_command", Visibility: "list",
-			SupportedInAPI: true,
-			BaseInstructions: "You are Codex, a coding agent.",
-			SupportsReasoning: true, SupportVerbosity: true,
+		e := make(map[string]any)
+		for k, v := range template {
+			e[k] = v
 		}
+		e["slug"] = slug
+		e["display_name"] = slugDisplay(slug)
+		e["description"] = slugDisplay(slug) + " via proxy"
+		e["supported_reasoning_levels"] = levels(slug)
+		e["priority"] = i + 1
+
 		if strings.Contains(strings.ToLower(slug), "qwen") {
-			e.ContextWindow = 131072
-			e.MaxContextWindow = 131072
+			e["context_window"] = 131072
+			e["max_context_window"] = 131072
 		}
 		entries = append(entries, e)
 	}
