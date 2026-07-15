@@ -43,6 +43,7 @@ func (a *App) CmdGUI() {
 	mux.HandleFunc("/api/login", a.handleAPILogin)
 	mux.HandleFunc("/api/logout", a.handleAPILogout)
 	mux.HandleFunc("/api/quit", a.handleAPIQuit)
+	mux.HandleFunc("/api/settings", a.handleSettings)
 	mux.HandleFunc("/proxy.pac", handlePAC)
 
 	port := "18900"
@@ -202,7 +203,27 @@ func (a *App) handleAPILogout(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handleAPIQuit(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[gui] POST /api/quit — shutting down")
-	json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`<!DOCTYPE html><html><body><script>window.close();</script><p>正在关闭...</p></body></html>`))
 	a.runLogoutCleanup()
 	os.Exit(0)
+}
+
+func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		json.NewEncoder(w).Encode(a.LoadSettings())
+		return
+	}
+	if r.Method == "POST" {
+		body, _ := io.ReadAll(r.Body)
+		var s Settings
+		if json.Unmarshal(body, &s) != nil || s.ProxyURL == "" {
+			json.NewEncoder(w).Encode(map[string]any{"ok": false, "message": "proxy_url 不能为空"})
+			return
+		}
+		a.SaveSettings(&s)
+		json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		return
+	}
+	http.Error(w, "method not allowed", 405)
 }
