@@ -111,7 +111,7 @@ yuanshu-ai server    → 启动加速服务
 
 ```bash
 # 登录
-./yuanshu-ai login
+./build/yuanshu-ai login
 请输入你的 API Key: ****
 → 正在连接服务器...
 ✅ 连接成功！共 16 个模型
@@ -120,7 +120,7 @@ yuanshu-ai server    → 启动加速服务
 🎉 登录成功
 
 # 退出
-./yuanshu-ai logout
+./build/yuanshu-ai logout
 🎉 已退出
 ```
 
@@ -158,6 +158,8 @@ client/
 ├── gui.go               # Web GUI 服务
 ├── web/index.html       # 浏览器界面
 ├── Makefile             # 构建
+├── logo-final.png       # 图标源图
+├── scripts/             # 资源生成脚本
 ├── yuanshu-ai.icns      # macOS 图标
 ├── yuanshu-ai.ico       # Windows 图标
 └── build/               # 构建产物

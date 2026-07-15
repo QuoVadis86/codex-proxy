@@ -1,9 +1,7 @@
 .DS_Store
+__pycache__/
 *.app
 *.dmg
 *.zip
 *.syso
-logo-final.png
-logo-cropped.png
-client/build/
 build/
