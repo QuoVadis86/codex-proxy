@@ -77,10 +77,24 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	modelNames := []string{}
+	if data, err := os.ReadFile(modelsPath); err == nil {
+		var result struct {
+			Models []struct {
+				Slug string `json:"slug"`
+			} `json:"models"`
+		}
+		if json.Unmarshal(data, &result) == nil {
+			for _, m := range result.Models {
+				modelNames = append(modelNames, m.Slug)
+			}
+		}
+	}
+
 	json.NewEncoder(w).Encode(map[string]any{
 		"logged_in":      loggedIn,
 		"server_running": serverRunning,
-		"models":         models,
+		"models":         modelNames,
 	})
 }
 
@@ -112,6 +126,8 @@ func handleAPILogin(w http.ResponseWriter, r *http.Request) {
 		startHijackServer()
 		msg = fmt.Sprintf("登录成功！共 %d 个模型可用", len(models))
 		ok = true
+		json.NewEncoder(w).Encode(map[string]any{"ok": ok, "message": msg, "models": models})
+		return
 	}
 
 	json.NewEncoder(w).Encode(map[string]any{"ok": ok, "message": msg})
