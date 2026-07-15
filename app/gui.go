@@ -172,7 +172,8 @@ func processRunning(pid int) bool {
 		return false
 	}
 	if runtime.GOOS == "windows" {
-		return proc != nil
+		out, _ := exec.Command("tasklist", "/FI", fmt.Sprintf("PID eq %d", pid), "/NH").Output()
+		return strings.Contains(string(out), fmt.Sprintf("%d", pid))
 	}
 	return proc.Signal(syscall.Signal(0)) == nil
 }
