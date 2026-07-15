@@ -23,11 +23,15 @@ mac:
 		-ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY) .
 	@echo "✅  $(BUILD_DIR)/$(BINARY)"
 
-win:
+win: yuanshu-ai.syso
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
 		-ldflags="-s -w -H windowsgui" -o $(BUILD_DIR)/$(BINARY).exe .
 	@echo "✅  $(BUILD_DIR)/$(BINARY).exe"
+
+yuanshu-ai.syso: yuanshu-ai.ico
+	@which rsrc 2>/dev/null || go install github.com/akavel/rsrc@latest 2>&1
+	rsrc -ico yuanshu-ai.ico -o yuanshu-ai.syso 2>/dev/null || true
 
 run:
 	@mkdir -p $(BUILD_DIR)
@@ -67,5 +71,5 @@ icons:
 	@echo "✅  yuanshu-ai.icns"
 
 clean:
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR) yuanshu-ai.syso
 	@echo "✅  已清理"
