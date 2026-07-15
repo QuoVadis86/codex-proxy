@@ -23,17 +23,16 @@ func (a *App) CmdGUI() {
 	fmt.Println("  正在启动界面...")
 	os.MkdirAll(a.YuanshuDir, 0755)
 
+	if url, ok := a.runningGUIURL(); ok {
+		a.Plat.OpenBrowser(url)
+		return
+	}
+
 	a.Plat.UnsetPAC()
 	defer a.runLogoutCleanup()
 
 	go a.startProxy()
 	time.Sleep(500 * time.Millisecond)
-
-	if url, ok := a.runningGUIURL(); ok {
-	a.Plat.OpenBrowser(url)
-		fmt.Printf("  已有实例正在运行: %s\n", url)
-		return
-	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
