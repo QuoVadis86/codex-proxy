@@ -79,7 +79,7 @@ func cmdLogin() {
 		}
 	}
 
-	// 加 hosts + 启动本地劫持服务
+	// 加 hosts + 启动本地加速服务
 	addHosts()
 	startHijackServer()
 
@@ -89,7 +89,7 @@ func cmdLogin() {
 }
 
 func startHijackServer() {
-	fmt.Println("  → 启动 Statsig 劫持服务...")
+	fmt.Println("  → 启动 Statsig 加速服务...")
 
 	// 启动子进程运行 server
 	exe, _ := os.Executable()
@@ -106,7 +106,7 @@ func startHijackServer() {
 	// 记下 PID
 	pidPath := filepath.Join(yuanshuDir, "proxy.pid")
 	os.WriteFile(pidPath, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0644)
-	fmt.Println("  ✅ Statsig 劫持服务已启动")
+	fmt.Println("  ✅ Statsig 加速服务已启动")
 }
 
 func cmdLogout() {
@@ -114,7 +114,7 @@ func cmdLogout() {
 	fmt.Println("  ║       元数智慧 AI Proxy · 退出            ║")
 	fmt.Println("  ╚═══════════════════════════════════════════╝")
 
-	// 停掉劫持服务
+	// 停掉加速服务
 	pidPath := filepath.Join(yuanshuDir, "proxy.pid")
 	if data, err := os.ReadFile(pidPath); err == nil {
 		var pid int
@@ -122,7 +122,7 @@ func cmdLogout() {
 		proc, err := os.FindProcess(pid)
 		if err == nil {
 			proc.Kill()
-			fmt.Println("  ✅ 劫持服务已停止")
+			fmt.Println("  ✅ 加速服务已停止")
 		}
 		os.Remove(pidPath)
 	}

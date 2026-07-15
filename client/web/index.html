@@ -79,7 +79,7 @@ async function login() {
     addLog(res.message || '完成');
     if (res.ok) {
       setStatus('statusLogin', '已登录', true);
-      setStatus('statusServer', '劫持服务运行中', true);
+      setStatus('statusServer', '加速服务运行中', true);
     } else {
       setStatus('statusLogin', '登录失败', false);
     }
@@ -103,7 +103,7 @@ async function logout() {
 async function refresh() {
   const res = await api('status');
   setStatus('statusLogin', res.logged_in ? '已登录' : '未登录', res.logged_in);
-  setStatus('statusServer', res.server_running ? '劫持服务运行中' : '已停止', res.server_running);
+  setStatus('statusServer', res.server_running ? '加速服务运行中' : '已停止', res.server_running);
   if (res.models) document.querySelector('.sub').textContent = '共 ' + res.models + ' 个模型可用';
 }
 refresh();
