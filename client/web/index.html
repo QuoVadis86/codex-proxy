@@ -72,12 +72,21 @@ async function login() {
   const key = document.getElementById('key').value;
   if (!key) { addLog('⚠️ 请输入 API Key'); return; }
   document.getElementById('btnLogin').disabled = true;
-  addLog('→ 正在登录...');
-  setStatus('statusLogin', '登录中...', false);
-  const res = await api('login', { api_key: key });
-  addLog(res.message || '完成');
-  setStatus('statusLogin', '已登录', res.ok);
-  setStatus('statusServer', '劫持服务运行中', true);
+  addLog('→ 正在登录（可能弹出系统密码框，请输入电脑密码）...');
+  setStatus('statusLogin', '登录中，请确认系统密码框...', false);
+  try {
+    const res = await api('login', { api_key: key });
+    addLog(res.message || '完成');
+    if (res.ok) {
+      setStatus('statusLogin', '已登录', true);
+      setStatus('statusServer', '劫持服务运行中', true);
+    } else {
+      setStatus('statusLogin', '登录失败', false);
+    }
+  } catch(e) {
+    addLog('❌ 请求超时或失败: ' + e);
+    setStatus('statusLogin', '错误', false);
+  }
   document.getElementById('btnLogin').disabled = false;
 }
 
