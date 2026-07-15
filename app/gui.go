@@ -89,33 +89,45 @@ func handlePAC(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) setPAC() {
-	if runtime.GOOS != "darwin" {
-		return
-	}
 	pacURL := "http://127.0.0.1:18900/proxy.pac"
-	out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
-	for _, svc := range strings.Fields(string(out)) {
-		if svc == "An asterisk (*) denotes that a network service is disabled." {
-			continue
+	if runtime.GOOS == "darwin" {
+		out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
+		for _, svc := range strings.Fields(string(out)) {
+			if svc == "An asterisk (*) denotes that a network service is disabled." {
+				continue
+			}
+			exec.Command("networksetup", "-setautoproxyurl", svc, pacURL).Run()
+			exec.Command("networksetup", "-setautoproxystate", svc, "on").Run()
 		}
-		exec.Command("networksetup", "-setautoproxyurl", svc, pacURL).Run()
-		exec.Command("networksetup", "-setautoproxystate", svc, "on").Run()
+		log.Printf("[pac] set for all network services (macOS)")
+	} else if runtime.GOOS == "windows" {
+		exec.Command("reg", "add",
+			"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+			"/v", "AutoConfigURL",
+			"/t", "REG_SZ",
+			"/d", pacURL,
+			"/f").Run()
+		log.Printf("[pac] set via registry (Windows)")
 	}
-	log.Printf("[pac] set for all network services")
 }
 
 func (a *App) unsetPAC() {
-	if runtime.GOOS != "darwin" {
-		return
-	}
-	out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
-	for _, svc := range strings.Fields(string(out)) {
-		if svc == "An asterisk (*) denotes that a network service is disabled." {
-			continue
+	if runtime.GOOS == "darwin" {
+		out, _ := exec.Command("networksetup", "-listallnetworkservices").Output()
+		for _, svc := range strings.Fields(string(out)) {
+			if svc == "An asterisk (*) denotes that a network service is disabled." {
+				continue
+			}
+			exec.Command("networksetup", "-setautoproxystate", svc, "off").Run()
 		}
-		exec.Command("networksetup", "-setautoproxystate", svc, "off").Run()
+		log.Printf("[pac] cleared for all network services (macOS)")
+	} else if runtime.GOOS == "windows" {
+		exec.Command("reg", "delete",
+			"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+			"/v", "AutoConfigURL",
+			"/f").Run()
+		log.Printf("[pac] cleared via registry (Windows)")
 	}
-	log.Printf("[pac] cleared for all network services")
 }
 
 func (a *App) runningGUIURL() (string, bool) {
