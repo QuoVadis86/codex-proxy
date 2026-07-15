@@ -15,8 +15,7 @@ import (
 	"time"
 )
 
-//go:embed statsig_response.json
-var fallbackData []byte
+var fallbackData = []byte(`{"feature_gates":{},"dynamic_configs":{},"layer_configs":{},"has_updates":true}`)
 
 //go:embed server.crt
 var serverCert []byte
