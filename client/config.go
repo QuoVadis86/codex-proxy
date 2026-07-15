@@ -191,7 +191,7 @@ func writeModelCatalog(models []string) {
 	}
 
 	truncPolicy := map[string]any{
-		"mode": "tokens", "limit": 100000,
+		"mode": "tokens", "limit": 10000,
 	}
 	modalities := []string{"text", "image"}
 
