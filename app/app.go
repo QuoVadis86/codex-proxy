@@ -41,6 +41,7 @@ func loadEnvFile(path string) {
 			os.Setenv(key, val)
 		}
 	}
+	scanner.Err()
 }
 
 func env(key, fallback string) string {
