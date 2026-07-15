@@ -23,6 +23,9 @@ func (a *App) CmdGUI() {
 	fmt.Println("  正在启动界面...")
 	os.MkdirAll(a.YuanshuDir, 0755)
 
+	a.unsetPAC()
+	defer a.runLogoutCleanup()
+
 	go a.startProxy()
 	time.Sleep(500 * time.Millisecond)
 
