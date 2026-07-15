@@ -185,6 +185,7 @@ func writeModelCatalog(models []string) {
 		MaxContextWindow        int     `json:"max_context_window,omitempty"`
 		ShellType               string  `json:"shell_type"`
 		Visibility              string  `json:"visibility"`
+		SupportedInAPI          bool    `json:"supported_in_api"`
 		BaseInstructions        string  `json:"base_instructions"`
 		SupportsReasoning       bool    `json:"supports_reasoning_summaries"`
 		SupportVerbosity        bool    `json:"support_verbosity"`
@@ -234,6 +235,7 @@ func writeModelCatalog(models []string) {
 			SupportedReasoningLevels: levels(slug),
 			Priority: i + 1,
 			ShellType: "shell_command", Visibility: "list",
+			SupportedInAPI: true,
 			BaseInstructions: "You are Codex, a coding agent.",
 			SupportsReasoning: true, SupportVerbosity: true,
 		}
